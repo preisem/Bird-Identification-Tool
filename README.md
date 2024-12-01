@@ -8,6 +8,9 @@ python3 -m venv myvenv
 source ./myvenv/bin/activate
 python main.py --camera 0 --mic sysdefault --recordings-directory path/to/folder --location 42.0051 74.2660
 ```
+## Import Notes
+- check the audio device names using ```arecord -L```
+- check the video device names using ```v4l2-ctl --list-devices```
 
 ## CMD Line Args
 - ```--camera```: ```int``` X of camera device where device name = ```/dev/videoX```
