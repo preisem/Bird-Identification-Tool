@@ -4,6 +4,7 @@ import argparse
 import logging
 import multiprocessing as mp
 import sys
+import os
 
 from pathlib import Path
 from datetime import datetime
@@ -21,6 +22,8 @@ def main(camera: int, mic: str, recordings_directory: Path):
     date_today_str = datetime.now().strftime("%Y-%m-%d")
     logger.info("Starting Bird Server: " + str(date_today_str))
     
+    ''' Create audio recordings directory if doesn't exist '''
+    os.makedirs(recordings_directory, exist_ok=True) 
     
     ''' create worker instances for webserver and bird tracking '''
     bird_server_workers = [
@@ -71,7 +74,7 @@ def parse_args():
     input_group.add_argument("--mic",type=str,required=True,help="Name of microphone device for audio tracking")
     
     output_group = parser.add_argument_group("Output")
-    output_group.add_argument("--recordings-directory",type=Path,required=False,default=Path("."),help="Path to directory to save audio recordings")
+    output_group.add_argument("--recordings-directory",type=Path,required=False,default=Path("./audio_recordings/"),help="Path to directory to save audio recordings")
 
     # Command line arguments for logging configuration.
     logging_group = parser.add_argument_group('Logging')
@@ -116,4 +119,3 @@ if __name__ == '__main__':
     except Exception as e:
         logger.error(f'Unknown exception of type: {type(e)} - {e}')
         raise e
-
