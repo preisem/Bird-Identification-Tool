@@ -47,7 +47,7 @@ def preanalyze(recording):
     recording.date = dt
 
 
-def main(mic_name: str, recording_dir: Path):
+def main(mic_name: str, recording_dir: Path, location: tuple):
 
     duration_secs = 15
 
@@ -91,8 +91,8 @@ def main(mic_name: str, recording_dir: Path):
     watcher = DirectoryWatcher(
         directory,
         analyzers=analyzers,
-        lon=-77.3664,
-        lat=35.6127,
+        lon=location[1],
+        lat=location[0],
         min_conf=0.1,
     )
     watcher.recording_preanalyze = preanalyze
@@ -102,10 +102,11 @@ def main(mic_name: str, recording_dir: Path):
     watcher.watch()
 
 
-def listen_for_birds(mic: str, recording_directory: Path):
+def listen_for_birds(mic: str, recording_directory: Path, location: tuple):
     logger.info(f"Starting Bird Audio Listener with Microphone: {mic}")
+    logger.info(f"Microphone Location: {location}")
     try:
-        main(mic, recording_directory)
+        main(mic, recording_directory, location)
     except KeyboardInterrupt:
         logger.info("KeyboardInterrupt")
     except Exception as e:
