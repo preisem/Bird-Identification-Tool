@@ -16,7 +16,7 @@ import tracking #bird audio and video tracking
 logger = logging.getLogger(__name__)
 
 
-def main(camera: int, mic: str, recordings_directory: Path):    
+def main(camera: int, mic: str, recordings_directory: Path, location: tuple):    
     
     ''' START '''
     date_today_str = datetime.now().strftime("%Y-%m-%d")
@@ -28,7 +28,7 @@ def main(camera: int, mic: str, recordings_directory: Path):
     ''' create worker instances for webserver and bird tracking '''
     bird_server_workers = [
         mp.Process(target=webserver.start_web_server,args=()),
-        mp.Process(target=tracking.listen_for_birds,args=(mic,recordings_directory,)),
+        mp.Process(target=tracking.listen_for_birds,args=(mic,recordings_directory,location,)),
         mp.Process(target=tracking.look_for_birds,args=(camera,))
     ]
     
@@ -72,6 +72,7 @@ def parse_args():
     input_group = parser.add_argument_group("Input")
     input_group.add_argument("--camera",type=int,required=True,help="Integer of camera device for video tracking")
     input_group.add_argument("--mic",type=str,required=True,help="Name of microphone device for audio tracking")
+    input_group.add_argument("--location",type=float,nargs=2,required=True,help="GPS location tuple such like: lat lon")
     
     output_group = parser.add_argument_group("Output")
     output_group.add_argument("--recordings-directory",type=Path,required=False,default=Path("./audio_recordings/"),help="Path to directory to save audio recordings")
@@ -115,7 +116,7 @@ if __name__ == '__main__':
         )
         
         ''' run main '''
-        main(args.camera, args.mic, args.recordings_directory)
+        main(args.camera, args.mic, args.recordings_directory, tuple(args.location))
     except Exception as e:
         logger.error(f'Unknown exception of type: {type(e)} - {e}')
         raise e
