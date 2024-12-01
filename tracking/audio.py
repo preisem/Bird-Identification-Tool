@@ -102,10 +102,10 @@ def main(mic_name: str, recording_dir: Path):
     watcher.watch()
 
 
-def listen_for_birds(mic: str):
+def listen_for_birds(mic: str, recording_directory: Path):
     logger.info(f"Starting Bird Audio Listener with Microphone: {mic}")
     try:
-        main(mic)
+        main(mic, recording_directory)
     except KeyboardInterrupt:
         logger.info("KeyboardInterrupt")
     except Exception as e:
