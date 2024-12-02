@@ -16,4 +16,6 @@ python main.py --camera 0 --mic sysdefault --recordings-directory path/to/folder
 - ```--camera```: ```int``` X of camera device where device name = ```/dev/videoX```
 - ```--mic```: ```str``` name of microphone device, can be found using command ```arecord -L```
 - ```--recordings_directory```: ```pathlib.Path``` path of directory to save audio recordings to
-- ```--location ```: ```float, tuple``` GPS location of devices using tuple such like: lat lon 
+- ```--location ```: ```float, tuple``` GPS location of devices using tuple such like: lat lon
+- ```--detections_directory```: ```pathlib.Path``` path of directory to save jsonl data of detected birds
+- ```--log-file-path```: ```pathlib.Path``` parth to directory to save log files
