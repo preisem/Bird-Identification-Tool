@@ -8,7 +8,7 @@ import os
 
 from pathlib import Path
 from datetime import datetime
-from random import shuffle, choice
+from geopy.geocoders import Nominatim
 
 import webserver #bird webserver frontend 
 import tracking #bird audio and video tracking
@@ -22,6 +22,9 @@ def main(camera: int, mic: str, recordings_directory: Path, location: tuple):
     date_today_str = datetime.now().strftime("%Y-%m-%d")
     logger.info("Starting Bird Server: " + str(date_today_str))
     
+    ''' Interpret Location '''
+    interpret_geolocation(location)
+
     ''' Create audio recordings directory if doesn't exist '''
     os.makedirs(recordings_directory, exist_ok=True) 
     
@@ -50,6 +53,32 @@ def empty_queue(queue):
     except mp.queues.Empty:
         pass
         
+def interpret_geolocation(location: tuple):
+    geolocator = Nominatim(user_agent="my_geocoder")
+    retries = 0
+    max_retries = 5
+    while retries <= max_retries:
+        try:
+            location_geo = geolocator.reverse((location[0], location[1]), exactly_one=True)
+            if location_geo:
+                address = location_geo.raw['address']
+                town = address.get('town', '')
+                state = address.get('state', '')
+                logger.info(f"Location set to {town}, {state} ({location[0]},{location[1]})")
+            else:
+                logger.warning(f"Location set to UNKNOWN ({location[0]},{location[1]})")
+            return 
+        except Exception as e:
+            logger.warning(f"Error while trying to geolocate coordinates: {e}")
+            retries = retries + 1 
+            if retries > max_retries:
+                logger.error(f"Max retries ({max_retries}) hit, skipping geolocation coordinates")
+                logger.warning(f"Location set to UNKNOWN ({location[0]},{location[1]})")
+                return
+            else: #retry limit not hit so wait before retry 
+                logger.warning(f"Retry({retries}) in 10s...") 
+                time.sleep(10)
+            
   
 def set_up_logging(packages, log_level, log_file):
     '''Set up logging for specific packages/modules.'''
