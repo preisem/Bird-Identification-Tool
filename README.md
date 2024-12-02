@@ -1,11 +1,14 @@
 
 ## Install
-```python -m pip install -r requirements.txt```
+```
+sudo apt-get install v4l-utils
+python3 -m venv myvenv
+source ./myvenv/bin/activate
+python -m pip install -r requirements.txt
+```
 
 ## QuickStart
 ```
-python3 -m venv myvenv
-source ./myvenv/bin/activate
 python main.py --camera 0 --mic sysdefault --recordings-directory path/to/folder --location 42.0051 -74.2660
 ```
 ## Import Notes
