@@ -16,7 +16,7 @@ import tracking #bird audio and video tracking
 logger = logging.getLogger(__name__)
 
 
-def main(camera: int, mic: str, recordings_directory: Path, location: tuple):    
+def main(camera: int, mic: str, recordings_directory: Path, detections_directory: Path, location: tuple):    
     
     ''' START '''
     date_today_str = datetime.now().strftime("%Y-%m-%d")
@@ -25,14 +25,15 @@ def main(camera: int, mic: str, recordings_directory: Path, location: tuple):
     ''' Interpret Location '''
     interpret_geolocation(location)
 
-    ''' Create audio recordings directory if doesn't exist '''
+    ''' Create audio recordings  and detections directory if doesn't exist '''
     os.makedirs(recordings_directory, exist_ok=True) 
+    os.makedirs(detections_directory, exist_ok=True)
     
     ''' create worker instances for webserver and bird tracking '''
     bird_server_workers = [
         mp.Process(target=webserver.start_web_server,args=()),
-        mp.Process(target=tracking.listen_for_birds,args=(mic,recordings_directory,location,)),
-        mp.Process(target=tracking.look_for_birds,args=(camera,))
+        mp.Process(target=tracking.listen_for_birds,args=(mic, recordings_directory, detections_directory, location, )),
+        mp.Process(target=tracking.look_for_birds,args=(camera, ))
     ]
     
     ''' start each collection worker '''
@@ -105,6 +106,7 @@ def parse_args():
     
     output_group = parser.add_argument_group("Output")
     output_group.add_argument("--recordings-directory",type=Path,required=False,default=Path("./audio_recordings/"),help="Path to directory to save audio recordings")
+    output_group.add_argument("--detections-directory",type=Path,required=False,default=Path("./detections/"),help="Path to directory to save detections from analyzers")
 
     # Command line arguments for logging configuration.
     logging_group = parser.add_argument_group('Logging')
@@ -118,7 +120,7 @@ def parse_args():
         choices=log_choices,
         help=f'log level {log_choices}'
     )
-    logging_group.add_argument("--log-file-path",required=False,default=Path("."),type=Path,help="log file path. (deafult is cwd)")
+    logging_group.add_argument("--log-file-path",required=False,default=Path("./logs/"),type=Path,help="log file path. (deafult is cwd)")
     
     #multiproccessing
     multiprocessing_group = parser.add_argument_group('Multiprocessing')
@@ -133,6 +135,9 @@ if __name__ == '__main__':
         args = parse_args()
         print(args)
         
+        ''' create log dir if doesn't already exist '''
+        os.makedirs(args.log_file_path, exist_ok=True)
+        
         ''' set up logging, add packages (class files that need to be included for logging) '''
         set_up_logging(
             packages=[
@@ -145,7 +150,7 @@ if __name__ == '__main__':
         )
         
         ''' run main '''
-        main(args.camera, args.mic, args.recordings_directory, tuple(args.location))
+        main(args.camera, args.mic, args.recordings_directory, args.detections_directory, tuple(args.location))
     except Exception as e:
         logger.error(f'Unknown exception of type: {type(e)} - {e}')
         raise e
