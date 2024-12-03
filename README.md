@@ -1,5 +1,6 @@
 # Bird Identification Tool
 ![Python](https://img.shields.io/static/v1?&message=Python%203.12&logo=python&labelColor=5c5c5c&color=1182c3&logoColor=white&label=%20)&nbsp;
+![Ubuntu](https://img.shields.io/badge/Ubuntu-E95420?style=for-the-badge&logo=Ubuntu&logoColor=white)&nbsp;
 ## Install
 ```
 sudo apt-get install v4l-utils -y
