@@ -33,9 +33,10 @@ python -m pip install -r requirements.txt
 ### Node
 - ```--camera```: ```int``` X of camera device where device name = ```/dev/videoX```
 - ```--mic```: ```str``` name of microphone device, can be found using command ```arecord -L```
-- ```--recordings_directory```: ```pathlib.Path``` path of directory to save audio recordings to
 - ```--location ```: ```float, tuple``` GPS location of devices using tuple such like: lat lon
-- ```--detections_directory```: ```pathlib.Path``` path of directory to save jsonl data of detected birds
+- ```--node-name ```: ```str``` Name of node
+- ```--recordings-directory```: ```pathlib.Path``` path of directory to save audio recordings to
+- ```--detections-directory```: ```pathlib.Path``` path of directory to save jsonl data of detected birds
 - ```--log-file-path```: ```pathlib.Path``` parth to directory to save log files
 ### Server
 - ```--detections_directory```: ```pathlib.Path``` path of directory to load jsonl data of detected birds
@@ -46,8 +47,9 @@ python -m pip install -r requirements.txt
 |----------|---------|-----------|-------|
 |start_ts|datetime string|datetime string indicating start of detection|2024-12-02T11:43:41|
 |end_ts|datetime string|datetime string indicating end of detection|2024-12-02T11:43:50|
-|common_name|string|common name of detected bird||
-|scientific_name|string|scientific name of detected bird||
+|common_name|string|common name of detected bird|American Crow|
+|scientific_name|string|scientific name of detected bird|Corvus brachyrhynchos|
 |confidence|float|confidince of the detection|0.85435|
 |location|string tuple '(float,float)'|location of the detection, expressed as a string tuple in format '(lat,lon)'|(42.01,-74.28)|
+|node_name|string|name of node|backyard-1|
 |filename|string pathlib.Path|filepath to audio file that the detection was made|sounds/2024-12-02-birdnet-11:43:35.wav|
