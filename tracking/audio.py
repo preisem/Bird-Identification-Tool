@@ -106,7 +106,7 @@ def main(mic_name: str, recording_dir: Path, detections_directory: Path, locatio
 def listen_for_birds(mic: str, recording_directory: Path, detections_directory: Path, location: tuple, node_name: str):
     logger.info(f"Starting Bird Audio Listener with Microphone: {mic}")
     try:
-        main(mic, recording_directory, detections_directory, location)
+        main(mic, recording_directory, detections_directory, location, node_name)
     except KeyboardInterrupt:
         logger.info("KeyboardInterrupt")
     except Exception as e:
