@@ -103,7 +103,7 @@ def main(mic_name: str, recording_dir: Path, detections_directory: Path, locatio
     watcher.watch()
 
 
-def listen_for_birds(mic: str, recording_directory: Path, detections_directory: Path, location: tuple):
+def listen_for_birds(mic: str, recording_directory: Path, detections_directory: Path, location: tuple, node_name: str):
     logger.info(f"Starting Bird Audio Listener with Microphone: {mic}")
     try:
         main(mic, recording_directory, detections_directory, location)
