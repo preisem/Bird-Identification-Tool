@@ -1,13 +1,8 @@
-import logging
-import time
+import logging, time, sys, signal, json
 
 from pathlib import Path
 from subprocess import Popen
-import sys
-import signal
 from datetime import datetime, timedelta
-from pprint import pprint
-import json
 
 from birdnetlib.watcher import DirectoryWatcher
 from birdnetlib.analyzer_lite import LiteAnalyzer
@@ -15,7 +10,7 @@ from birdnetlib.analyzer import Analyzer
 
 logger = logging.getLogger(__name__)
 
-def format_and_save_detections_to_file(detections, recording_path: Path, detections_directory: Path, location: tuple):
+def format_and_save_detections_to_file(detections, recording_path: Path, detections_directory: Path, location: tuple, node_name: str):
     ''' Get start date of recording from filename '''
     datetime_str = str(recording_path).split("/")[-1] #remove subfolder from filename (still has .wav)
     rec_start_time_obj = datetime.strptime(datetime_str, "%Y-%m-%d-birdnet-%H:%M:%S.wav")
@@ -29,13 +24,14 @@ def format_and_save_detections_to_file(detections, recording_path: Path, detecti
             json_out["scientific_name"] = detection['scientific_name']
             json_out["confidence"] = detection['confidence']
             json_out["location"] = str(location)
+            json_out["node_name"] = node_name
             json_out["filename"] = str(recording_path)
             
             print(json_out)
             fileout.write(json.dumps(json_out)+"\n")
 
 
-def main(mic_name: str, recording_dir: Path, detections_directory: Path, location: tuple):
+def main(mic_name: str, recording_dir: Path, detections_directory: Path, location: tuple, node_name: str):
 
     duration_secs = 15
     RECORD_PROCESS = None
@@ -45,7 +41,7 @@ def main(mic_name: str, recording_dir: Path, detections_directory: Path, locatio
     # after each analyze is complete
         if recording.detections:
             ''' Send each detection to be formatted and written out to json file '''
-            format_and_save_detections_to_file(recording.detections, recording.path, detections_directory, location)
+            format_and_save_detections_to_file(recording.detections, recording.path, detections_directory, location, node_name)
             
     def on_error(recording, error):
         logger.error("An exception occurred: {}".format(error))
@@ -107,10 +103,10 @@ def main(mic_name: str, recording_dir: Path, detections_directory: Path, locatio
     watcher.watch()
 
 
-def listen_for_birds(mic: str, recording_directory: Path, detections_directory: Path, location: tuple):
+def listen_for_birds(mic: str, recording_directory: Path, detections_directory: Path, location: tuple, node_name: str):
     logger.info(f"Starting Bird Audio Listener with Microphone: {mic}")
     try:
-        main(mic, recording_directory, detections_directory, location)
+        main(mic, recording_directory, detections_directory, location, node_name)
     except KeyboardInterrupt:
         logger.info("KeyboardInterrupt")
     except Exception as e:

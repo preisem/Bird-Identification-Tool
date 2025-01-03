@@ -1,4 +1,4 @@
-''' Matt P Server for Bird Migration Tool'''
+'''Node for Bird Migration Tool'''
 
 import argparse
 import logging
@@ -10,17 +10,16 @@ from pathlib import Path
 from datetime import datetime
 from geopy.geocoders import Nominatim
 
-import webserver #bird webserver frontend 
 import tracking #bird audio and video tracking
 
 logger = logging.getLogger(__name__)
 
 
-def main(camera: int, mic: str, recordings_directory: Path, detections_directory: Path, location: tuple):    
+def main(camera: int, mic: str, recordings_directory: Path, detections_directory: Path, location: tuple, node_name: str):    
     
     ''' START '''
     date_today_str = datetime.now().strftime("%Y-%m-%d")
-    logger.info("Starting Bird Server: " + str(date_today_str))
+    logger.info("Starting Bird Node ("+ node_name +"): " + str(date_today_str))
     
     ''' Interpret Location '''
     interpret_geolocation(location)
@@ -31,8 +30,7 @@ def main(camera: int, mic: str, recordings_directory: Path, detections_directory
     
     ''' create worker instances for webserver and bird tracking '''
     bird_server_workers = [
-        mp.Process(target=webserver.start_web_server,args=()),
-        mp.Process(target=tracking.listen_for_birds,args=(mic, recordings_directory, detections_directory, location, )),
+        mp.Process(target=tracking.listen_for_birds,args=(mic, recordings_directory, detections_directory, location, node_name, )),
         mp.Process(target=tracking.look_for_birds,args=(camera, ))
     ]
     
@@ -45,7 +43,7 @@ def main(camera: int, mic: str, recordings_directory: Path, detections_directory
         worker.join()
     
     ''' End of Sever, Shutdown '''
-    logger.info("Closing Bird Server @ " + datetime.now().strftime("%H:%M:%S"))   
+    logger.info("Closing Bird Node @ " + datetime.now().strftime("%H:%M:%S"))   
 
 def empty_queue(queue):
     try:
@@ -103,6 +101,7 @@ def parse_args():
     input_group.add_argument("--camera",type=int,required=True,help="Integer of camera device for video tracking")
     input_group.add_argument("--mic",type=str,required=True,help="Name of microphone device for audio tracking")
     input_group.add_argument("--location",type=float,nargs=2,required=True,help="GPS location tuple such like: lat lon")
+    input_group.add_argument("--node-name",type=str,required=False,default="default",help="Name for node")
     
     output_group = parser.add_argument_group("Output")
     output_group.add_argument("--recordings-directory",type=Path,required=False,default=Path("./audio_recordings/"),help="Path to directory to save audio recordings")
@@ -122,10 +121,6 @@ def parse_args():
     )
     logging_group.add_argument("--log-file-path",required=False,default=Path("./logs/"),type=Path,help="log file path. (deafult is cwd)")
     
-    #multiproccessing
-    multiprocessing_group = parser.add_argument_group('Multiprocessing')
-    #multiprocessing_group.add_argument('--workers',default=1,type=int)
-
     return parser.parse_args()
 
 
@@ -142,15 +137,14 @@ if __name__ == '__main__':
         set_up_logging(
             packages=[
                 __name__, # always
-                'webserver',
                 'tracking'
             ],
             log_level=args.log_level,
-            log_file=Path(args.log_file_path / Path(f'{datetime.today().year}-{str(datetime.today().month).zfill(2)}.log'))
+            log_file=Path(args.log_file_path / Path(f'{datetime.today().year}-{str(datetime.today().month).zfill(2)}-node-{args.node_name}.log'))
         )
         
         ''' run main '''
-        main(args.camera, args.mic, args.recordings_directory, args.detections_directory, tuple(args.location))
+        main(args.camera, args.mic, args.recordings_directory, args.detections_directory, tuple(args.location), args.node_name)
     except Exception as e:
         logger.error(f'Unknown exception of type: {type(e)} - {e}')
         raise e
