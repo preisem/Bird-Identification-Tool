@@ -29,10 +29,14 @@ def main(camera: int, mic: str, recordings_directory: Path, detections_directory
     os.makedirs(detections_directory, exist_ok=True)
     
     ''' create worker instances for webserver and bird tracking '''
-    bird_server_workers = [
-        mp.Process(target=tracking.listen_for_birds,args=(mic, recordings_directory, detections_directory, location, node_name, )),
-        mp.Process(target=tracking.look_for_birds,args=(camera, ))
-    ]
+    bird_server_workers = []
+    # add audio worker
+    bird_server_workers.append(
+        mp.Process(target=tracking.listen_for_birds,args=(mic, recordings_directory, detections_directory, location, node_name, ))
+        )
+    # add video worker if --camera exists
+    if camera is not None:
+        bird_server_workers.append(mp.Process(target=tracking.look_for_birds,args=(camera, )))
     
     ''' start each collection worker '''
     for worker in bird_server_workers:
@@ -98,7 +102,7 @@ def parse_args():
 
     # Command line arguments for input.
     input_group = parser.add_argument_group("Input")
-    input_group.add_argument("--camera",type=int,required=True,help="Integer of camera device for video tracking")
+    input_group.add_argument("--camera",type=int,required=False,help="Integer of camera device for video tracking")
     input_group.add_argument("--mic",type=str,required=True,help="Name of microphone device for audio tracking")
     input_group.add_argument("--location",type=float,nargs=2,required=True,help="GPS location tuple such like: lat lon")
     input_group.add_argument("--node-name",type=str,required=False,default="default",help="Name for node")
