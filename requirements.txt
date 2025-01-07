@@ -53,7 +53,7 @@ ml-dtypes==0.4.1
 msgpack==1.1.0
 multidict==6.1.0
 namex==0.0.8
-nicegui==2.8.1
+nicegui==2.9.1
 numba==0.60.0
 numpy==2.0.2
 opencv-python==4.10.0.84
