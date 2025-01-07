@@ -14,28 +14,38 @@ def main(detections_directory: Path):
     logger.info("Starting Bird Server: " + str(date_today_str))
     
     ''' title of page '''
-    ui.markdown("##Birds Detected Today")
+    ui.page_title('Bird Identification Tool')
+    #ui.markdown("##Birds Detected Today")
     
     ''' load data from jsonl file into detections_data'''
     detections_file = detections_directory / Path("detections-"+ datetime.now().strftime("%Y-%m-%d") + ".jsonl")
     detections_data = generate_table_data_from_file(detections_file)
     
     ''' PLACE OBJECTS ON SCREEN '''
-
+    
     with ui.splitter(value=40) as splitter:
         with splitter.before: # LEFT SIDE OBJECTS
         
             ''' create table object using data and headers '''
-            table = ui.table(rows=detections_data)
+            table = ui.table(rows=detections_data, title='Birds Detected Today', pagination={'rowsPerPage': 10, 'descending': True, 'sortBy': 'start_ts'},)
+                                                   
               
         with splitter.after: # RIGHT SIDE
-        
-            ''' random pie chart '''
-            piechart = generate_pie_chart_object(pie_type="species-distro", input_data=detections_data)
-    
-        
+            ''' create tabs to display graphs '''
+            with ui.tabs().classes('w-full') as tabs:
+                one = ui.tab('Pie')
+                two = ui.tab('Bar')
+            with ui.tab_panels(tabs, value=one).classes('w-full'):
+                with ui.tab_panel(one):
+                    ''' distribution by species pie chart '''
+                    piechart = generate_pie_chart_object(pie_type="species-distro", input_data=detections_data)
+                with ui.tab_panel(two):
+                    ''' avg model confidence bar chart '''
+                    barchart = generate_bar_chart_object(bar_type="species-confidence", input_data=detections_data)
+            
+                 
     ''' run server, reload when files are modified '''
-    ui.run(uvicorn_reload_includes='*.py, *.jsonl')
+    ui.run(uvicorn_reload_includes='*.py, *.jsonl', favicon='🐦')
 
 def generate_table_data_from_file(file_path: Path):
     rows = []
@@ -84,6 +94,58 @@ def generate_pie_chart_object(pie_type: str, input_data):
         chart = ui.highchart({
             'title': {'text': 'Distribution of Birds by Species'},
             'chart': {'type': 'pie'},
+            #'tooltip': {'valueSuffix': '%'},
+            'series': series,
+            })#.classes('w-full h-64')
+        
+        return chart
+        
+def generate_bar_chart_object(bar_type: str, input_data):
+    ''' create data, then series, then chart '''
+    if bar_type=="species-confidence":
+        ''' create data '''
+        bird_counts = [] #each item will be name, count json objects
+        bird_confidence_total = [] #each item will be the confidence of each detection
+        bird_names = [] # keep track of all bird names so far 
+        for entry in input_data:
+            if entry['common_name'] not in bird_names:
+                ''' new bird, so add object with 1 count to bird counts '''
+                bird_counts.append({'name': entry['common_name'], 'y': 1 })
+                bird_names.append(entry['common_name'])
+                bird_confidence_total.append({'name': entry['common_name'], 'y': entry['confidence'] })
+            else:
+                for n in bird_counts:
+                    if n['name'] == entry['common_name']:
+                        old_y = n['y'] # get y
+                        bird_counts.remove(n)#remove old from list
+                        bird_counts.append({'name': entry['common_name'], 'y': old_y + 1 }) # add new to list
+                for n in bird_confidence_total:
+                    if n['name'] == entry['common_name']:    
+                        old_conf = n['y']
+                        bird_confidence_total.remove(n)
+                        bird_confidence_total.append({'name': entry['common_name'], 'y': entry['confidence'] + old_conf})
+        avg_confidence = []
+        for a,b in zip(bird_confidence_total, bird_counts):
+            avg_confidence.append({'name': a['name'], 'y': a['y'] / b['y'] })
+        
+        data = avg_confidence
+        ''' static test data 
+        data = [
+                {'name': 'Northern Cardinal', 'y': 34 },
+                {'name': 'Carbohydrates', 'y': 10},
+                {'name': 'Protein', 'y': 15},
+                {'name': 'Ash', 'y': 21}
+            ]
+         '''   
+            
+        ''' create series using data '''
+        series = [{ 'name': 'Avg Confidence',  'data': data}]
+        
+        '''create chart using series '''
+        chart = ui.highchart({
+            'title': {'text': 'Average Model Confidence by Species'},
+            'chart': {'type': 'column'},
+            'xAxis': {'type': 'category', 'labels': { 'autoRotation': [-45, -90]}},
             #'tooltip': {'valueSuffix': '%'},
             'series': series,
             })#.classes('w-full h-64')
