@@ -16,27 +16,80 @@ def main(detections_directory: Path):
     ''' title of page '''
     ui.markdown("##Birds Detected Today")
     
-    ''' generate table data and headers from file '''
+    ''' load data from jsonl file into detections_data'''
     detections_file = detections_directory / Path("detections-"+ datetime.now().strftime("%Y-%m-%d") + ".jsonl")
-    rows = []
-    try:
-        rows = generate_table_data_from_file(detections_file)
-        ''' create table object using data and headers '''
-        table = ui.table(rows=rows)
-    except Exception as e:
-        logger.error("Exception while generating table: " + str(e))
+    detections_data = generate_table_data_from_file(detections_file)
+    
+    ''' PLACE OBJECTS ON SCREEN '''
+
+    with ui.splitter(value=40) as splitter:
+        with splitter.before: # LEFT SIDE OBJECTS
+        
+            ''' create table object using data and headers '''
+            table = ui.table(rows=detections_data)
+              
+        with splitter.after: # RIGHT SIDE
+        
+            ''' random pie chart '''
+            piechart = generate_pie_chart_object(pie_type="species-distro", input_data=detections_data)
+    
         
     ''' run server, reload when files are modified '''
     ui.run(uvicorn_reload_includes='*.py, *.jsonl')
 
 def generate_table_data_from_file(file_path: Path):
     rows = []
-    with open(file_path, "r") as filein:
-        for line in filein:
-            data = json.loads(line.strip("\n"))
-            rows.append(data)
-    return(rows)
-  
+    try:
+        with open(file_path, "r") as filein:
+            for line in filein:
+                data = json.loads(line.strip("\n"))
+                rows.append(data)
+    except Exception as e:
+        logger.error("Exception while generating table: " + str(e))            
+    
+    return rows
+    
+def generate_pie_chart_object(pie_type: str, input_data):
+    ''' create data, then series, then chart '''
+    if pie_type=="species-distro":
+        ''' create data '''
+        bird_counts = [] #each item will be name, count json objects
+        bird_names = [] # keep track of all bird names so far 
+        for entry in input_data:
+            if entry['common_name'] not in bird_names:
+                ''' new bird, so add object with 1 count to bird counts '''
+                bird_counts.append({'name': entry['common_name'], 'y': 1 })
+                bird_names.append(entry['common_name'])
+            else:
+                for n in bird_counts:
+                    if n['name'] == entry['common_name']:
+                        old_y = n['y'] # get y
+                        bird_counts.remove(n)#remove old from list
+                        bird_counts.append({'name': entry['common_name'], 'y': old_y + 1 }) # add new to list
+                    
+        data = bird_counts
+        ''' static test data 
+        data = [
+                {'name': 'Northern Cardinal', 'y': 34 },
+                {'name': 'Carbohydrates', 'y': 10},
+                {'name': 'Protein', 'y': 15},
+                {'name': 'Ash', 'y': 21}
+            ]
+         '''   
+            
+        ''' create series using data '''
+        series = [{ 'name': 'Count',  'data': data}]
+        
+        '''create chart using series '''
+        chart = ui.highchart({
+            'title': {'text': 'Distribution of Birds by Species'},
+            'chart': {'type': 'pie'},
+            #'tooltip': {'valueSuffix': '%'},
+            'series': series,
+            })#.classes('w-full h-64')
+        
+        return chart
+        
 def set_up_logging(packages, log_level, log_file):
     '''Set up logging for specific packages/modules.'''
     formatter = logging.Formatter('%(asctime)s - %(process)d - %(levelname)s - %(message)s')
@@ -98,4 +151,3 @@ if __name__ in {"__main__", "__mp_main__"}: #to allow server to run within mp
     except Exception as e:
         logger.error(f'Unknown exception of type: {type(e)} - {e}')
         raise e
-
