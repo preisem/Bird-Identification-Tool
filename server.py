@@ -129,14 +129,6 @@ def generate_bar_chart_object(bar_type: str, input_data):
             avg_confidence.append({'name': a['name'], 'y': a['y'] / b['y'] })
         
         data = avg_confidence
-        ''' static test data 
-        data = [
-                {'name': 'Northern Cardinal', 'y': 34 },
-                {'name': 'Carbohydrates', 'y': 10},
-                {'name': 'Protein', 'y': 15},
-                {'name': 'Ash', 'y': 21}
-            ]
-         '''   
             
         ''' create series using data '''
         series = [{ 'name': 'Avg Confidence',  'data': data}]
@@ -146,9 +138,11 @@ def generate_bar_chart_object(bar_type: str, input_data):
             'title': {'text': 'Average Model Confidence by Species'},
             'chart': {'type': 'column'},
             'xAxis': {'type': 'category', 'labels': { 'autoRotation': [-45, -90]}},
-            #'tooltip': {'valueSuffix': '%'},
+            'yAxis': {'ceiling': 1, 'title': {'text': 'Confidence'} },
+            'legend': {'enabled': False},
+            'plotOptions': {'column': {'colorByPoint': True}},
             'series': series,
-            })#.classes('w-full h-64')
+            })
         
         return chart
         
