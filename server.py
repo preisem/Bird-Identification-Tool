@@ -23,19 +23,19 @@ def main(detections_directory: Path):
     
     ''' PLACE OBJECTS ON SCREEN '''
     
-    with ui.splitter(value=40) as splitter:
+    with ui.splitter(value=35) as splitter:
         with splitter.before: # LEFT SIDE OBJECTS
         
             ''' create table object using data and headers '''
-            table = ui.table(rows=detections_data, title='Birds Detected Today', pagination={'rowsPerPage': 10, 'descending': True, 'sortBy': 'start_ts'},)
+            table = ui.table(rows=detections_data, title='Birds Detected Today', pagination={'rowsPerPage': 10, 'descending': True, 'sortBy': 'start_ts'},).classes('w-full')
                                                    
               
         with splitter.after: # RIGHT SIDE
             ''' create tabs to display graphs '''
-            with ui.tabs().classes('w-full') as tabs:
-                one = ui.tab('Pie')
-                two = ui.tab('Bar')
-            with ui.tab_panels(tabs, value=one).classes('w-full'):
+            with ui.tabs() as tabs:
+                one = ui.tab('Species Distribution')
+                two = ui.tab('Model Confidence')
+            with ui.tab_panels(tabs, value=one):
                 with ui.tab_panel(one):
                     ''' distribution by species pie chart '''
                     piechart = generate_pie_chart_object(pie_type="species-distro", input_data=detections_data)
@@ -96,7 +96,7 @@ def generate_pie_chart_object(pie_type: str, input_data):
             'chart': {'type': 'pie'},
             #'tooltip': {'valueSuffix': '%'},
             'series': series,
-            })#.classes('w-full h-64')
+            })
         
         return chart
         
