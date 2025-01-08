@@ -43,9 +43,13 @@ def main(detections_directory: Path):
                     ''' avg model confidence bar chart '''
                     barchart = generate_bar_chart_object(bar_type="species-confidence", input_data=detections_data)
             
-                 
+            dark = ui.dark_mode()
+            with ui.card():
+                ui.switch('Dark Mode', on_change= dark.toggle)     
+            
     ''' run server, reload when files are modified '''
     ui.run(uvicorn_reload_includes='*.py, *.jsonl', favicon='🐦')
+
 
 def generate_table_data_from_file(file_path: Path):
     rows = []
