@@ -28,6 +28,13 @@ def main(detections_directory: Path):
         
             ''' create table object using data and headers '''
             table = ui.table(rows=detections_data, title='Birds Detected Today', pagination={'rowsPerPage': 10, 'descending': True, 'sortBy': 'start_ts'},).classes('w-full')
+            table.add_slot('body-cell-confidence', '''
+    <q-td key="confidence" :props="props">
+        <q-badge :color="props.value < 0.25 ? 'red' : props.value < 0.5 ? 'orange' : props.value < 0.75 ? 'yellow' : 'green'">
+            {{ props.value }}
+        </q-badge>
+    </q-td>
+''')
                                                    
               
         with splitter.after: # RIGHT SIDE
