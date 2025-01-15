@@ -36,6 +36,7 @@ python -m pip install -r requirements.txt
 - ```--mic```: ```str``` name of microphone device, can be found using command ```arecord -L```
 - ```--location ```: ```float, tuple``` GPS location of devices using tuple such like: lat lon
 - ```--node-name ```: ```str``` Name of node
+- ```--min-confidence ```: ```float``` Minimum confidence of model for audio detection (default=0.2, range=0.0<x<1.0)
 - ```--recordings-directory```: ```pathlib.Path``` path of directory to save audio recordings to
 - ```--detections-directory```: ```pathlib.Path``` path of directory to save jsonl data of detected birds
 - ```--log-file-path```: ```pathlib.Path``` parth to directory to save log files
