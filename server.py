@@ -27,7 +27,7 @@ def main(detections_directory: Path):
         with splitter.before: # LEFT SIDE OBJECTS
         
             ''' create table object using data and headers '''
-            table = ui.table(rows=detections_data, title='Birds Detected Today', pagination={'rowsPerPage': 10, 'descending': True, 'sortBy': 'start_ts'},).classes('w-full')
+            table = ui.table(rows=detections_data, title='Birds Detected Today (' + str(len(detections_data)) + ')', pagination={'rowsPerPage': 10, 'descending': True, 'sortBy': 'start_ts'},).classes('w-full')
             table.add_slot('body-cell-confidence', '''
     <q-td key="confidence" :props="props">
         <q-badge :color="props.value < 0.25 ? 'red' : props.value < 0.5 ? 'orange' : props.value < 0.75 ? 'yellow' : 'green'">
@@ -89,15 +89,7 @@ def generate_pie_chart_object(pie_type: str, input_data):
                         bird_counts.append({'name': entry['common_name'], 'y': old_y + 1 }) # add new to list
                     
         data = bird_counts
-        ''' static test data 
-        data = [
-                {'name': 'Northern Cardinal', 'y': 34 },
-                {'name': 'Carbohydrates', 'y': 10},
-                {'name': 'Protein', 'y': 15},
-                {'name': 'Ash', 'y': 21}
-            ]
-         '''   
-            
+             
         ''' create series using data '''
         series = [{ 'name': 'Count',  'data': data}]
         
@@ -107,6 +99,7 @@ def generate_pie_chart_object(pie_type: str, input_data):
             'chart': {'type': 'pie'},
             #'tooltip': {'valueSuffix': '%'},
             'series': series,
+            'credits': False,
             })
         
         return chart
@@ -153,6 +146,7 @@ def generate_bar_chart_object(bar_type: str, input_data):
             'legend': {'enabled': False},
             'plotOptions': {'column': {'colorByPoint': True}},
             'series': series,
+            'credits': False,
             })
         
         return chart
