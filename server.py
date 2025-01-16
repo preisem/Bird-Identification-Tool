@@ -8,7 +8,7 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-def main(detections_directory: Path):
+def main(detections_directory: Path, directory_watcher: Path):
     ''' START '''
     date_today_str = datetime.now().strftime("%Y-%m-%d")
     logger.info("Starting Bird Server: " + str(date_today_str))
@@ -22,12 +22,13 @@ def main(detections_directory: Path):
     detections_data = generate_table_data_from_file(detections_file)
     
     ''' PLACE OBJECTS ON SCREEN '''
+    ui.query('.nicegui-content').classes('h-screen')
     
     with ui.splitter(value=35) as splitter:
         with splitter.before: # LEFT SIDE OBJECTS
         
             ''' create table object using data and headers '''
-            table = ui.table(rows=detections_data, title='Birds Detected Today (' + str(len(detections_data)) + ')', pagination={'rowsPerPage': 10, 'descending': True, 'sortBy': 'start_ts'},).classes('w-full')
+            table = ui.table(rows=detections_data, title='Audio Detections Today (' + str(len(detections_data)) + ')', pagination={'rowsPerPage': 10, 'descending': True, 'sortBy': 'start_ts'},)
             table.add_slot('body-cell-confidence', '''
     <q-td key="confidence" :props="props">
         <q-badge :color="props.value < 0.25 ? 'red' : props.value < 0.5 ? 'orange' : props.value < 0.75 ? 'yellow' : 'green'">
@@ -42,6 +43,7 @@ def main(detections_directory: Path):
             with ui.tabs() as tabs:
                 one = ui.tab('Species Distribution')
                 two = ui.tab('Model Confidence')
+                three = ui.tab('Detections over Time')
             with ui.tab_panels(tabs, value=one):
                 with ui.tab_panel(one):
                     ''' distribution by species pie chart '''
@@ -49,13 +51,19 @@ def main(detections_directory: Path):
                 with ui.tab_panel(two):
                     ''' avg model confidence bar chart '''
                     barchart = generate_bar_chart_object(bar_type="species-confidence", input_data=detections_data)
+                with ui.tab_panel(three):
+                    linechart = generate_line_chart_object(input_data=detections_data)
             
             dark = ui.dark_mode()
-            with ui.card():
-                ui.switch('Dark Mode', on_change= dark.toggle)     
-            
+            with ui.row():
+                with ui.card():
+                    ui.switch('Dark Mode', on_change= dark.toggle)     
+                if directory_watcher:    
+                    with ui.card():
+                        ui.markdown(str(get_directory_size(directory_watcher)) + "GB" )
+                     
     ''' run server, reload when files are modified '''
-    ui.run(uvicorn_reload_includes='*.py, *.jsonl', favicon='🐦')
+    ui.run(uvicorn_reload_includes='*.py, *.jsonl', favicon='🐦', show=False)
 
 
 def generate_table_data_from_file(file_path: Path):
@@ -151,6 +159,41 @@ def generate_bar_chart_object(bar_type: str, input_data):
         
         return chart
         
+def generate_line_chart_object(input_data):
+    ''' create data, then series, then chart '''
+    bird_counts = [0] * 24 #each item will be name, count json objects
+    for entry in input_data:
+        num = int(entry['start_ts'][11:13]) # get hour from TS and use as index in list
+        bird_counts[num] = bird_counts[num] + 1 #add one to counter for that hour
+        
+    ''' create series using data '''
+    series = [{ 'name': 'Detections',  'data': bird_counts}]
+    
+    ''' create chart using series '''
+    chart = ui.highchart({
+            'title': {'text': 'Detections by Hour'},
+            'xAxis': {'ceiling': 20, 'floor': 6, 'title': {'text': 'Time of Day (24H)'} },
+            'yAxis': {'title': {'text': 'Detections'} },
+            #'legend': {'enabled': False},
+            #'plotOptions': {'column': {'colorByPoint': True}},
+            'series': series,
+            'credits': False,
+            })
+    
+    return chart
+
+def get_directory_size(path: Path):
+    path = str(path)
+    total_size = 0
+    for dirpath, dirnames, filenames in os.walk(path):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            # skip if it is symbolic link
+            if not os.path.islink(fp):
+                total_size += os.path.getsize(fp)
+    size_gb = round(float(total_size / 1000000000),2)
+    return size_gb
+        
 def set_up_logging(packages, log_level, log_file):
     '''Set up logging for specific packages/modules.'''
     formatter = logging.Formatter('%(asctime)s - %(process)d - %(levelname)s - %(message)s')
@@ -171,6 +214,7 @@ def parse_args():
     # Command line arguments for input.
     input_group = parser.add_argument_group("Input")
     input_group.add_argument("--detections-directory",type=Path,required=False,default=Path("./detections/"),help="Path to directory where detections from node analyzers are saved")
+    input_group.add_argument("--directory-watcher",type=Path,required=False,help="Path to directory that the size in GB will be reported to the dashboard")
 
     # Command line arguments for logging configuration.
     logging_group = parser.add_argument_group('Logging')
@@ -208,7 +252,7 @@ if __name__ in {"__main__", "__mp_main__"}: #to allow server to run within mp
         )
         
         ''' run main '''
-        main(args.detections_directory)
+        main(args.detections_directory, args.directory_watcher)
     except Exception as e:
         logger.error(f'Unknown exception of type: {type(e)} - {e}')
         raise e
