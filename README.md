@@ -42,6 +42,7 @@ python -m pip install -r requirements.txt
 - ```--log-file-path```: ```pathlib.Path``` parth to directory to save log files
 ### Server
 - ```--detections_directory```: ```pathlib.Path``` path of directory to load jsonl data of detected birds
+- ```--directory_wathcer```: ```pathlib.Path``` path to directory that the size in GB will be reported to the dashboard (optional)
 - ```--log-file-path```: ```pathlib.Path``` parth to directory to save log files
 
 ## JSON Output Data Schema 
