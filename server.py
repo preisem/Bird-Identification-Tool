@@ -15,7 +15,6 @@ def main(detections_directory: Path, directory_watcher: Path):
     
     ''' title of page '''
     ui.page_title('Bird Identification Tool')
-    #ui.markdown("##Birds Detected Today")
     
     ''' load data from jsonl file into detections_data'''
     detections_file = detections_directory / Path("detections-"+ datetime.now().strftime("%Y-%m-%d") + ".jsonl")
@@ -28,7 +27,7 @@ def main(detections_directory: Path, directory_watcher: Path):
         with splitter.before: # LEFT SIDE OBJECTS
         
             ''' create table object using data and headers '''
-            table = ui.table(rows=detections_data, title='Audio Detections Today (' + str(len(detections_data)) + ')', pagination={'rowsPerPage': 10, 'descending': True, 'sortBy': 'start_ts'},)
+            table = ui.table(rows=detections_data, title='Audio Detections Today (' + str(len(detections_data)) + ')', pagination={'rowsPerPage': 10, 'descending': True, 'sortBy': 'start_ts'},).classes('w-full')
             table.add_slot('body-cell-confidence', '''
     <q-td key="confidence" :props="props">
         <q-badge :color="props.value < 0.25 ? 'red' : props.value < 0.5 ? 'orange' : props.value < 0.75 ? 'yellow' : 'green'">
@@ -57,10 +56,23 @@ def main(detections_directory: Path, directory_watcher: Path):
             dark = ui.dark_mode()
             with ui.row():
                 with ui.card():
-                    ui.switch('Dark Mode', on_change= dark.toggle)     
+                    with ui.row():
+                            ui.switch( on_change= dark.toggle)  
+                            ui.icon('dark_mode', color='primary').classes('text-4xl')                    
                 if directory_watcher:    
                     with ui.card():
-                        ui.markdown(str(get_directory_size(directory_watcher)) + "GB" )
+                        with ui.row():
+                            ''' get dir size, color icon depending on disk usage '''
+                            dir_size = get_directory_size(directory_watcher)
+                            if dir_size > 5: #critical 5gb used
+                                color_usage = 'red'
+                            elif dir_size > 3: #warning 3gb used
+                                color_usage = 'orange'
+                            else:
+                                color_usage = 'primary'
+                    
+                            ui.icon('folder_open', color=color_usage).classes('text-4xl')
+                            ui.markdown(str(dir_size) + "GB Used" )
                      
     ''' run server, reload when files are modified '''
     ui.run(uvicorn_reload_includes='*.py, *.jsonl', favicon='🐦', show=False)
@@ -138,7 +150,7 @@ def generate_bar_chart_object(bar_type: str, input_data):
                         bird_confidence_total.append({'name': entry['common_name'], 'y': entry['confidence'] + old_conf})
         avg_confidence = []
         for a,b in zip(bird_confidence_total, bird_counts):
-            avg_confidence.append({'name': a['name'], 'y': a['y'] / b['y'] })
+            avg_confidence.append({'name': a['name'], 'y': round(a['y'] / b['y'],2) })
         
         data = avg_confidence
             
