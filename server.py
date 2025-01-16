@@ -174,8 +174,6 @@ def generate_line_chart_object(input_data):
             'title': {'text': 'Detections by Hour'},
             'xAxis': {'ceiling': 20, 'floor': 6, 'title': {'text': 'Time of Day (24H)'} },
             'yAxis': {'title': {'text': 'Detections'} },
-            #'legend': {'enabled': False},
-            #'plotOptions': {'column': {'colorByPoint': True}},
             'series': series,
             'credits': False,
             })
