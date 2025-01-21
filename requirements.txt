@@ -35,7 +35,7 @@ httpx==0.28.1
 idna==3.10
 ifaddr==0.2.0
 itsdangerous==2.2.0
-Jinja2==3.1.4
+Jinja2==3.1.5
 joblib==1.4.2
 keras==3.7.0
 kiwisolver==1.4.7
@@ -53,7 +53,7 @@ ml-dtypes==0.4.1
 msgpack==1.1.0
 multidict==6.1.0
 namex==0.0.8
-nicegui==2.8.1
+nicegui==2.10.1
 nicegui-highcharts==2.0.2
 numba==0.60.0
 numpy==2.0.2
