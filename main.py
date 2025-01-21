@@ -15,7 +15,7 @@ import tracking #bird audio and video tracking
 logger = logging.getLogger(__name__)
 
 
-def main(camera: int, mic: str, recordings_directory: Path, detections_directory: Path, location: tuple, node_name: str):    
+def main(camera: int, mic: str, recordings_directory: Path, detections_directory: Path, location: tuple, node_name: str, min_confidence: float):    
     
     ''' START '''
     date_today_str = datetime.now().strftime("%Y-%m-%d")
@@ -28,11 +28,11 @@ def main(camera: int, mic: str, recordings_directory: Path, detections_directory
     os.makedirs(recordings_directory, exist_ok=True) 
     os.makedirs(detections_directory, exist_ok=True)
     
-    ''' create worker instances for webserver and bird tracking '''
+    ''' create worker instances for bird tracking '''
     bird_server_workers = []
     # add audio worker
     bird_server_workers.append(
-        mp.Process(target=tracking.listen_for_birds,args=(mic, recordings_directory, detections_directory, location, node_name, ))
+        mp.Process(target=tracking.listen_for_birds,args=(mic, recordings_directory, detections_directory, location, node_name, min_confidence, ))
         )
     # add video worker if --camera exists
     if camera is not None:
@@ -106,6 +106,7 @@ def parse_args():
     input_group.add_argument("--mic",type=str,required=True,help="Name of microphone device for audio tracking")
     input_group.add_argument("--location",type=float,nargs=2,required=True,help="GPS location tuple such like: lat lon")
     input_group.add_argument("--node-name",type=str,required=False,default="default",help="Name for node")
+    input_group.add_argument("--min-confidence",type=float,required=False,default=0.2,help="Minimum confidence of model for audio detection (default=0.2, range=0.0<x<1.0)")
     
     output_group = parser.add_argument_group("Output")
     output_group.add_argument("--recordings-directory",type=Path,required=False,default=Path("./audio_recordings/"),help="Path to directory to save audio recordings")
@@ -148,7 +149,7 @@ if __name__ == '__main__':
         )
         
         ''' run main '''
-        main(args.camera, args.mic, args.recordings_directory, args.detections_directory, tuple(args.location), args.node_name)
+        main(args.camera, args.mic, args.recordings_directory, args.detections_directory, tuple(args.location), args.node_name, args.min_confidence)
     except Exception as e:
         logger.error(f'Unknown exception of type: {type(e)} - {e}')
         raise e

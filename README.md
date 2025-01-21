@@ -2,6 +2,7 @@
 [![Python](https://img.shields.io/static/v1?&message=Python%203.12.3&logo=python&labelColor=gray&color=1182c3&logoColor=white&label=%20)](https://www.python.org/downloads/release/python-3123/) 
 [![Ubuntu](https://img.shields.io/badge/Ubuntu-E95420?style=for-the-badge&logo=Ubuntu&logoColor=white)](https://ubuntu.com/blog/tag/ubuntu-24-04-lts)
 [![BirdNetLib](https://img.shields.io/static/v1?&message=birdnetlib&logo=pypi&labelColor=5c5c5c&color=f27b3a&logoColor=white&label=%20)](https://pypi.org/project/birdnetlib/)
+[![NiceGUI](https://img.shields.io/static/v1?&message=NiceGUI&logo=pypi&labelColor=5c5c5c&color=609867&logoColor=white&label=%20)](https://pypi.org/project/nicegui/)
 
 This tool is split into 2 main parts:
 - Node (main.py): Nodes collect and analyze audio (and eventually video) and save bird detections to daily jsonl files
@@ -35,11 +36,13 @@ python -m pip install -r requirements.txt
 - ```--mic```: ```str``` name of microphone device, can be found using command ```arecord -L```
 - ```--location ```: ```float, tuple``` GPS location of devices using tuple such like: lat lon
 - ```--node-name ```: ```str``` Name of node
+- ```--min-confidence ```: ```float``` Minimum confidence of model for audio detection (default=0.2, range=0.0<x<1.0)
 - ```--recordings-directory```: ```pathlib.Path``` path of directory to save audio recordings to
 - ```--detections-directory```: ```pathlib.Path``` path of directory to save jsonl data of detected birds
 - ```--log-file-path```: ```pathlib.Path``` parth to directory to save log files
 ### Server
 - ```--detections_directory```: ```pathlib.Path``` path of directory to load jsonl data of detected birds
+- ```--directory_wathcer```: ```pathlib.Path``` path to directory that the size in GB will be reported to the dashboard (optional)
 - ```--log-file-path```: ```pathlib.Path``` parth to directory to save log files
 
 ## JSON Output Data Schema 

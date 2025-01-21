@@ -20,9 +20,9 @@ def format_and_save_detections_to_file(detections, recording_path: Path, detecti
             json_out = {}
             json_out["start_ts"] = (rec_start_time_obj + timedelta(seconds=detection['start_time']) ).strftime("%Y-%m-%dT%H:%M:%S")
             json_out["end_ts"] = (rec_start_time_obj + timedelta(seconds=detection['end_time']) ).strftime("%Y-%m-%dT%H:%M:%S")
+            json_out["confidence"] = round(detection['confidence'],2) # round to 2 sig figs
             json_out["common_name"] = detection['common_name']
             json_out["scientific_name"] = detection['scientific_name']
-            json_out["confidence"] = detection['confidence']
             json_out["location"] = str(location)
             json_out["node_name"] = node_name
             json_out["filename"] = str(recording_path)
@@ -31,7 +31,7 @@ def format_and_save_detections_to_file(detections, recording_path: Path, detecti
             fileout.write(json.dumps(json_out)+"\n")
 
 
-def main(mic_name: str, recording_dir: Path, detections_directory: Path, location: tuple, node_name: str):
+def main(mic_name: str, recording_dir: Path, detections_directory: Path, location: tuple, node_name: str, min_confidence: float):
 
     duration_secs = 15
     RECORD_PROCESS = None
@@ -92,7 +92,7 @@ def main(mic_name: str, recording_dir: Path, detections_directory: Path, locatio
         analyzers=analyzers,
         lon=location[1],
         lat=location[0],
-        min_conf=0.2,
+        min_conf=min_confidence, #default 0.2
     )
     
     ''' Set function call after analyze of each recording is completed '''
@@ -103,10 +103,10 @@ def main(mic_name: str, recording_dir: Path, detections_directory: Path, locatio
     watcher.watch()
 
 
-def listen_for_birds(mic: str, recording_directory: Path, detections_directory: Path, location: tuple, node_name: str):
+def listen_for_birds(mic: str, recording_directory: Path, detections_directory: Path, location: tuple, node_name: str, min_confidence: float):
     logger.info(f"Starting Bird Audio Listener with Microphone: {mic}")
     try:
-        main(mic, recording_directory, detections_directory, location, node_name)
+        main(mic, recording_directory, detections_directory, location, node_name, min_confidence)
     except KeyboardInterrupt:
         logger.info("KeyboardInterrupt")
     except Exception as e:
