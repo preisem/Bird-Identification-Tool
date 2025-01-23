@@ -80,7 +80,7 @@ def interpret_geolocation(location: tuple):
                 return
             else: #retry limit not hit so wait before retry 
                 logger.warning(f"Retry({retries}) in 10s...") 
-                time.sleep(10)
+                time.sleep(10) # noqa
             
   
 def set_up_logging(packages, log_level, log_file):
