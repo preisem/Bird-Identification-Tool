@@ -1,4 +1,4 @@
-import logging, time, sys, signal, json
+import logging, time, sys, signal, json, os
 
 from pathlib import Path
 from subprocess import Popen
@@ -42,6 +42,11 @@ def main(mic_name: str, recording_dir: Path, detections_directory: Path, locatio
         if recording.detections:
             ''' Send each detection to be formatted and written out to json file '''
             format_and_save_detections_to_file(recording.detections, recording.path, detections_directory, location, node_name)
+        else:
+            ''' No detections from recording, so delete file to save space '''
+            logger.info("No detections, deleting file: " + str(recording.path))
+            os.remove(recording.path) 
+            
             
     def on_error(recording, error):
         logger.error("An exception occurred: {}".format(error))
