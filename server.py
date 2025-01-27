@@ -69,7 +69,7 @@ def main(detections_directory: Path, directory_watcher: Path):
                             elif dir_size > 3: #warning 3gb used
                                 color_usage = 'orange'
                             else:
-                                color_usage = 'primary'
+                                color_usage = 'green'
                     
                             ui.icon('folder_open', color=color_usage).classes('text-4xl')
                             ui.markdown(str(dir_size) + "GB Used" )
