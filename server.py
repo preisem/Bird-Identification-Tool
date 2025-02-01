@@ -173,23 +173,28 @@ def generate_bar_chart_object(bar_type: str, input_data):
         
 def generate_line_chart_object(input_data):
     ''' create data, then series, then chart '''
-    bird_counts = [0] * 24 #each item will be name, count json objects
+    bird_counts = [] 
+    total_birds = 0
     for entry in input_data:
-        num = int(entry['start_ts'][11:13]) # get hour from TS and use as index in list
-        bird_counts[num] = bird_counts[num] + 1 #add one to counter for that hour
-        
+        num = str(entry['start_ts']) 
+        total_birds = total_birds + 1
+        bird_counts.append([num,total_birds])
+                    
     ''' create series using data '''
-    series = [{ 'name': 'Detections',  'data': bird_counts}]
+    series_data = [[int(datetime.fromisoformat(timestamp).timestamp() * 1000), value] for timestamp, value in bird_counts]
     
-    ''' create chart using series '''
-    chart = ui.highchart({
-            'title': {'text': 'Detections by Hour'},
-            'xAxis': {'ceiling': 20, 'floor': 6, 'title': {'text': 'Time of Day (24H)'} },
-            'yAxis': {'title': {'text': 'Detections'} },
-            'series': series,
-            'credits': False,
-            })
-    
+    ''' create chart '''
+    chart = ui.highchart(
+        {
+        'chart': {'type': 'line'},
+        'title': {'text': 'Total Detections Over Time'},
+        'xAxis': {'type': 'datetime', 'title': {'text': 'Timestamp'}},
+        'yAxis': {'title': {'text': 'Detections'}},
+        'credits': False,
+        'series': [{'name': 'Total Detections','data': series_data}]
+        },
+    )
+
     return chart
 
 def get_directory_size(path: Path):
