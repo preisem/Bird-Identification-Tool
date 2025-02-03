@@ -31,22 +31,26 @@ def format_and_save_detections_to_file(detections, recording_path: Path, detecti
             fileout.write(json.dumps(json_out)+"\n")
 
 
-def main(mic_name: str, recording_dir: Path, detections_directory: Path, location: tuple, node_name: str, min_confidence: float):
+def main(mic_name: str, recording_dir: Path, detections_directory: Path, location: tuple, node_name: str, min_confidence: float, save_audio: str):
 
     duration_secs = 15
     RECORD_PROCESS = None
     
     ''' Create Analyzer Functions '''
     def on_analyze_complete(recording):
-    # after each analyze is complete
+        # after each analyze is complete, determine if saving audio or not
+        ''' check for detections, write if exist '''
         if recording.detections:
-            ''' Send each detection to be formatted and written out to json file '''
             format_and_save_detections_to_file(recording.detections, recording.path, detections_directory, location, node_name)
-        else:
+        
+        ''' save or delete audio files '''
+        if save_audio == "never":
+            os.remove(recording.path)
+        elif (save_audio == "detections-only") and not (recording.detections): 
             ''' No detections from recording, so delete file to save space '''
             logger.info("No detections, deleting file: " + str(recording.path))
-            os.remove(recording.path) 
-            
+            os.remove(recording.path)
+    
             
     def on_error(recording, error):
         logger.error("An exception occurred: {}".format(error))
@@ -108,10 +112,10 @@ def main(mic_name: str, recording_dir: Path, detections_directory: Path, locatio
     watcher.watch()
 
 
-def listen_for_birds(mic: str, recording_directory: Path, detections_directory: Path, location: tuple, node_name: str, min_confidence: float):
+def listen_for_birds(mic: str, recording_directory: Path, detections_directory: Path, location: tuple, node_name: str, min_confidence: float, save_audio: str):
     logger.info(f"Starting Bird Audio Listener with Microphone: {mic}")
     try:
-        main(mic, recording_directory, detections_directory, location, node_name, min_confidence)
+        main(mic, recording_directory, detections_directory, location, node_name, min_confidence, save_audio)
     except KeyboardInterrupt:
         logger.info("KeyboardInterrupt")
     except Exception as e:
