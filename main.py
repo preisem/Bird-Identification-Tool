@@ -15,7 +15,7 @@ import tracking #bird audio and video tracking
 logger = logging.getLogger(__name__)
 
 
-def main(camera: int, mic: str, recordings_directory: Path, detections_directory: Path, location: tuple, node_name: str, min_confidence: float):    
+def main(camera: int, mic: str, recordings_directory: Path, detections_directory: Path, location: tuple, node_name: str, min_confidence: float, save_audio: str):    
     
     ''' START '''
     date_today_str = datetime.now().strftime("%Y-%m-%d")
@@ -32,7 +32,7 @@ def main(camera: int, mic: str, recordings_directory: Path, detections_directory
     bird_server_workers = []
     # add audio worker
     bird_server_workers.append(
-        mp.Process(target=tracking.listen_for_birds,args=(mic, recordings_directory, detections_directory, location, node_name, min_confidence, ))
+        mp.Process(target=tracking.listen_for_birds,args=(mic, recordings_directory, detections_directory, location, node_name, min_confidence, save_audio, ))
         )
     # add video worker if --camera exists
     if camera is not None:
@@ -80,7 +80,7 @@ def interpret_geolocation(location: tuple):
                 return
             else: #retry limit not hit so wait before retry 
                 logger.warning(f"Retry({retries}) in 10s...") 
-                time.sleep(10) # noqa
+                time.sleep(10)
             
   
 def set_up_logging(packages, log_level, log_file):
@@ -111,6 +111,7 @@ def parse_args():
     output_group = parser.add_argument_group("Output")
     output_group.add_argument("--recordings-directory",type=Path,required=False,default=Path("./audio_recordings/"),help="Path to directory to save audio recordings")
     output_group.add_argument("--detections-directory",type=Path,required=False,default=Path("./detections/"),help="Path to directory to save detections from analyzers")
+    output_group.add_argument("--save-audio",type=str,choices=["always", "detections-only", "never"], default="detections-only", required=False, help="Options for saving audio files after processing (always, detections-only, or never)")
 
     # Command line arguments for logging configuration.
     logging_group = parser.add_argument_group('Logging')
@@ -149,7 +150,7 @@ if __name__ == '__main__':
         )
         
         ''' run main '''
-        main(args.camera, args.mic, args.recordings_directory, args.detections_directory, tuple(args.location), args.node_name, args.min_confidence)
+        main(args.camera, args.mic, args.recordings_directory, args.detections_directory, tuple(args.location), args.node_name, args.min_confidence, args.save_audio)
     except Exception as e:
         logger.error(f'Unknown exception of type: {type(e)} - {e}')
         raise e
