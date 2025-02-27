@@ -63,7 +63,7 @@ def main(detections_directory: Path, directory_watcher: Path):
     
         with ui.header():
             username = app.storage.user["username"][0].upper() + app.storage.user["username"][1:] #uppercase the first letter
-            ui.image("icon.png").classes("h-12 w-12") #logo icon
+            ui.image("img/icon.png").classes("h-12 w-12") #logo icon
             ui.label(f'Hello {username}!').style('color: #FFFFFF; font-size: 200%; font-weight: 300') # header banner
             ui.space() # creates space between left justified and right justified items
             ui.button('Analysis', on_click=lambda: ui.navigate.to('/analysis')).classes("h-11") # button link to /analysis
@@ -151,7 +151,7 @@ def main(detections_directory: Path, directory_watcher: Path):
         
         with ui.header():
             username = app.storage.user["username"][0].upper() + app.storage.user["username"][1:]
-            ui.image("icon.png").classes("h-12 w-12")
+            ui.image("img/icon.png").classes("h-12 w-12")
             ui.label(f'Hello {username}!').style('color: #FFFFFF; font-size: 200%; font-weight: 300')
             ui.space()
             ui.button('Dashboard', on_click=lambda: ui.navigate.to('/')).classes("h-11")
@@ -201,7 +201,7 @@ def main(detections_directory: Path, directory_watcher: Path):
         
         with ui.header():
             username = app.storage.user["username"][0].upper() + app.storage.user["username"][1:]
-            ui.image("icon.png").classes("h-12 w-12")
+            ui.image("img/icon.png").classes("h-12 w-12")
             ui.label(f'Hello {username}!').style('color: #FFFFFF; font-size: 200%; font-weight: 300')
             ui.space()
             ui.button('Dashboard', on_click=lambda: ui.navigate.to('/')).classes("h-11")
@@ -232,7 +232,7 @@ def main(detections_directory: Path, directory_watcher: Path):
         if app.storage.user.get('authenticated', False):
             return RedirectResponse('/')
         with ui.card().classes('absolute-center'):
-            ui.image('logo.png')
+            ui.image('img/logo.png')
             username = ui.input('Username').on('keydown.enter', try_login)
             password = ui.input('Password', password=True, password_toggle_button=True).on('keydown.enter', try_login)
             ui.button('Log in', on_click=try_login)
