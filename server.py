@@ -25,8 +25,8 @@ def main(detections_directory: Path, directory_watcher: Path):
     ''' START '''
     date_today_str = datetime.now().strftime("%Y-%m-%d")
     logger.info("Starting Bird Server: " + str(date_today_str))
-        
-    ''' load data from jsonl file into detections_data'''
+    
+    ''' load detections data '''
     detections_file = detections_directory / Path("detections-"+ datetime.now().strftime("%Y-%m-%d") + ".jsonl")
     detections_data = generate_table_data_from_file(detections_file)
        
@@ -71,10 +71,10 @@ def main(detections_directory: Path, directory_watcher: Path):
             ui.button(on_click=logout, icon='logout').classes("h-11") # logout button
         
         ''' MAIN DASHBOARD CARDS '''
-        with ui.card().classes('absolute-center'):
+        with ui.card().classes('absolute-center').style('align-items: center;'):
             with ui.column():
                 with ui.row():
-                    with ui.card().classes('w-full'):
+                    with ui.card():
                         ''' Top label with date: Sunday, January 1st, 2025 '''
                         ui.label(datetime.now().strftime("%A, %B %-d, %Y")).style('font-size: 36px; font-weight: bold;')
             
@@ -135,6 +135,10 @@ def main(detections_directory: Path, directory_watcher: Path):
                                     ui.label('Storage Usage').style('font-weight: bold')
                                     ui.icon('folder_open', color=color_usage).classes('text-4xl')
                                     ui.markdown(str(dir_size) + "GB Used" )           
+                    
+
+                    
+        
         #queries 
         ui.query('header').style(f'background-color: #292f48')
         ui.query('body').style(f'background-color: #42849b')
