@@ -61,42 +61,40 @@ def main(detections_directory: Path, directory_watcher: Path):
         ''' title of page '''
         ui.page_title('Bird Identification Tool')          
     
+        ''' call function to generate header bar '''
         with ui.header():
-            username = app.storage.user["username"][0].upper() + app.storage.user["username"][1:] #uppercase the first letter
-            ui.image("img/icon.png").classes("h-12 w-12") #logo icon
-            ui.label(f'Hello {username}!').style('color: #FFFFFF; font-size: 200%; font-weight: 300') # header banner
-            ui.space() # creates space between left justified and right justified items
-            ui.button('Analysis', on_click=lambda: ui.navigate.to('/analysis')).classes("h-11") # button link to /analysis
-            ui.button('Readme', on_click=lambda: ui.navigate.to('/readme')).classes("h-11") # button link to /readme
+            generate_header(route='/',ui=ui) 
             ui.button(on_click=logout, icon='logout').classes("h-11") # logout button
         
         ''' MAIN DASHBOARD CARDS '''
         with ui.card().classes('absolute-center').style('align-items: center;'):
             with ui.column():
                 with ui.row():
+                    ''' today's date card '''
                     with ui.card():
-                        ''' Top label with date: Sunday, January 1st, 2025 '''
                         ui.label(datetime.now().strftime("%A, %B %-d, %Y")).style('font-size: 36px; font-weight: bold;')
             
             with ui.column():
                 with ui.row():
+                    ''' total detections today card '''
                     with ui.card():
                         with ui.column().style('align-items: center;'):
                             ui.label('Audio Detections').style('font-weight: bold')
                             ui.label(str(len(detections_data))).style('font-size: 36px; font-weight: bold; color: #6E93D6;')
                             # .style('color: #6E93D6; font-size: 200%; font-weight: 300').classes('absolute-center')
                 
+                    ''' recent identification card '''
                     with ui.card():
                         with ui.column().style('align-items: center;'):
                             ui.label('Most Recent Identification').style('font-weight: bold')
                             try:
                                 ui.label(detections_data[-1]["common_name"]).style('font-size: 36px; font-weight: bold; color: #6E93D6;')
-                                ui.audio(detections_data[-1]["filename"])
+                                ui.audio(detections_data[-1]["filename"])# later use .seek() to start 1s before the start of detection
                                 #ui.markdown(str(detections_data[-1]["start_ts"]))
                             except:
                                 ui.label("None").style('font-size: 36px; font-weight: bold; color: #6E93D6;')
                             
-                    
+                    ''' average model confidence card '''
                     with ui.card():
                         with ui.column().style('align-items: center;'):
                             ui.label('Model Confidence').style('font-weight: bold')
@@ -121,7 +119,8 @@ def main(detections_directory: Path, directory_watcher: Path):
                             else:
                                 ''' default style for model confidence '''
                                 ui.label("-").style('font-size: 36px; font-weight: bold; color: #6E93D6;')
-                                
+                    
+                    ''' directory watcher card '''
                     if directory_watcher:    
                         with ui.card():
                             with ui.row():
@@ -138,11 +137,8 @@ def main(detections_directory: Path, directory_watcher: Path):
                                     ui.label('Storage Usage').style('font-weight: bold')
                                     ui.icon('folder_open', color=color_usage).classes('text-5xl')
                                     ui.markdown(str(dir_size) + "GB Used" )           
-                    
-
-                    
-        
-        #queries 
+                            
+        ''' queries '''
         ui.query('header').style(f'background-color: #292f48')
         ui.query('body').style(f'background-color: #42849b')
     
@@ -156,13 +152,9 @@ def main(detections_directory: Path, directory_watcher: Path):
             
         ui.page_title('Bird Identification Tool') 
         
+        ''' call function to generate header bar '''
         with ui.header():
-            username = app.storage.user["username"][0].upper() + app.storage.user["username"][1:]
-            ui.image("img/icon.png").classes("h-12 w-12")
-            ui.label(f'Hello {username}!').style('color: #FFFFFF; font-size: 200%; font-weight: 300')
-            ui.space()
-            ui.button('Dashboard', on_click=lambda: ui.navigate.to('/')).classes("h-11")
-            ui.button('Readme', on_click=lambda: ui.navigate.to('/readme')).classes("h-11")
+            generate_header(route='/analysis',ui=ui) 
             ui.button(on_click=logout, icon='logout').classes("h-11") # logout button
             
         with ui.card().classes('overflow-auto fixed-center'):
@@ -206,13 +198,9 @@ def main(detections_directory: Path, directory_watcher: Path):
             
         ui.page_title('Bird Identification Tool') 
         
+        ''' call function to generate header bar '''
         with ui.header():
-            username = app.storage.user["username"][0].upper() + app.storage.user["username"][1:]
-            ui.image("img/icon.png").classes("h-12 w-12")
-            ui.label(f'Hello {username}!').style('color: #FFFFFF; font-size: 200%; font-weight: 300')
-            ui.space()
-            ui.button('Dashboard', on_click=lambda: ui.navigate.to('/')).classes("h-11")
-            ui.button('Analysis', on_click=lambda: ui.navigate.to('/analysis')).classes("h-11")
+            generate_header(route='/readme',ui=ui) 
             ui.button(on_click=logout, icon='logout').classes("h-11") # logout button
         
         ''' load the readme file into a markdown element '''
@@ -251,8 +239,26 @@ def main(detections_directory: Path, directory_watcher: Path):
 
     ''' RUN ''' 
     ui.run(uvicorn_reload_includes='*.py, *.jsonl', storage_secret='THIS_NEEDS_TO_BE_CHANGED', show=False, favicon='🐦')
+    
 
-
+def generate_header(route: str, ui):
+        ''' all pages get the welcome banner '''
+        username = app.storage.user["username"][0].upper() + app.storage.user["username"][1:] #uppercase the first letter
+        ui.image("img/icon.png").classes("h-12 w-12") #logo icon
+        ui.label(f'Hello {username}!').style('color: #FFFFFF; font-size: 200%; font-weight: 300') # header banner
+        ui.space() # creates space between left justified and right justified items
+        
+        ''' create buttons to other pages depending on what page the header is on '''
+        if route == "/":
+            ui.button('Analysis', on_click=lambda: ui.navigate.to('/analysis')).classes("h-11") # button link to /analysis
+            ui.button('Readme', on_click=lambda: ui.navigate.to('/readme')).classes("h-11") # button link to /readme
+        elif route == "/analysis":
+            ui.button('Dashboard', on_click=lambda: ui.navigate.to('/')).classes("h-11")
+            ui.button('Readme', on_click=lambda: ui.navigate.to('/readme')).classes("h-11")
+        elif route == "/readme":
+            ui.button('Dashboard', on_click=lambda: ui.navigate.to('/')).classes("h-11")
+            ui.button('Analysis', on_click=lambda: ui.navigate.to('/analysis')).classes("h-11")
+            
 def generate_table_data_from_file(file_path: Path):
     rows = []
     try:
