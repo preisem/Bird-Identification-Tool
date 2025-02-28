@@ -80,21 +80,24 @@ def main(detections_directory: Path, directory_watcher: Path):
             
             with ui.column():
                 with ui.row():
-                    with ui.card().style('text-align: center;'):
+                    with ui.card():
                         with ui.column().style('align-items: center;'):
                             ui.label('Audio Detections').style('font-weight: bold')
                             ui.label(str(len(detections_data))).style('font-size: 36px; font-weight: bold; color: #6E93D6;')
                             # .style('color: #6E93D6; font-size: 200%; font-weight: 300').classes('absolute-center')
                 
-                    with ui.card().style('text-align: center;'):
+                    with ui.card():
                         with ui.column().style('align-items: center;'):
                             ui.label('Most Recent Identification').style('font-weight: bold')
                             try:
                                 ui.label(detections_data[-1]["common_name"]).style('font-size: 36px; font-weight: bold; color: #6E93D6;')
+                                ui.audio(detections_data[-1]["filename"])
+                                #ui.markdown(str(detections_data[-1]["start_ts"]))
                             except:
                                 ui.label("None").style('font-size: 36px; font-weight: bold; color: #6E93D6;')
+                            
                     
-                    with ui.card().style('text-align: center;'):
+                    with ui.card():
                         with ui.column().style('align-items: center;'):
                             ui.label('Model Confidence').style('font-weight: bold')
                             ''' calculate average '''
@@ -133,7 +136,7 @@ def main(detections_directory: Path, directory_watcher: Path):
                                     
                                 with ui.column().style('align-items: center;'):
                                     ui.label('Storage Usage').style('font-weight: bold')
-                                    ui.icon('folder_open', color=color_usage).classes('text-4xl')
+                                    ui.icon('folder_open', color=color_usage).classes('text-5xl')
                                     ui.markdown(str(dir_size) + "GB Used" )           
                     
 
@@ -213,8 +216,9 @@ def main(detections_directory: Path, directory_watcher: Path):
             ui.button(on_click=logout, icon='logout').classes("h-11") # logout button
         
         ''' load the readme file into a markdown element '''
-        with open('README.md', 'r') as readme_in:
-            ui.markdown(readme_in.read())
+        with ui.card():
+            with open('README.md', 'r') as readme_in:
+                ui.markdown(readme_in.read())
         
             
         #queries 
