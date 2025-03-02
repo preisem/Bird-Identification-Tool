@@ -37,7 +37,7 @@ def main(camera: int, mic: str, recordings_directory: Path, detections_directory
         )
     # add video worker if --camera exists
     if camera is not None:
-        bird_server_workers.append(mp.Process(target=tracking.look_for_birds,args=(camera, )))
+        bird_server_workers.append(mp.Process(target=tracking.look_for_birds,args=(camera, node_name, )))
     
     ''' start each collection worker '''
     for worker in bird_server_workers:
