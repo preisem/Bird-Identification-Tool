@@ -33,7 +33,7 @@ python -m pip install -r requirements.txt
 
 ## CMD Line Args
 ### Node
-- ```--camera```: ```int``` X of camera device where device name = ```/dev/videoX```
+- ```--camera```: ```int``` X of camera device where device name = ```/dev/videoX``` This will create a local video stream with flask on port 5000
 - ```--mic```: ```str``` name of microphone device, can be found using command ```arecord -L```
 - ```--location ```: ```float, tuple``` GPS location of devices using tuple such like: lat lon
 - ```--node-name ```: ```str``` Name of node
