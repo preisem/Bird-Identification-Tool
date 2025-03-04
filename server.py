@@ -202,26 +202,28 @@ def main(detections_directory: Path, directory_watcher: Path, video_streams):
         with ui.header():
             generate_header(route='/video',ui=ui) 
             ui.button(on_click=logout, icon='logout').classes("h-11") # logout button
-        
-        ''' load streams from input as urls into tabs '''
-        with ui.card().style('align-items: center;').classes('absolute-center'):
-            with ui.row():
+
+
+        ''' load streams from input as urls into a card with buttons at the bottom to chose the active stream to display '''
+        with ui.card().style('align-items: center; width: 50%; margin: auto;').classes('absolute-center'):
+            with ui.column().style('width: 100%; align-items: center;'):
                 # Create a placeholder for the stream display
                 if video_streams:
-                    stream_display = ui.image(video_streams[0]).style('width: 100%; height: auto;')
+                    # Set a larger width and height for the video display
+                    stream_display = ui.image(video_streams[0]).style('width: 100%; max-width: 800px; height: auto;')
 
                     # Define a function to update the displayed stream
                     def change_stream(stream_url):
                         stream_display.set_source(stream_url)  # Update the image source
 
                     # Create buttons for each stream
-                    for stream in video_streams:
-                        ui.button(stream.split("/")[-1], on_click=lambda s=stream: change_stream(s))
-                else: # default page if no streams provided
+                    with ui.row().style('justify-content: center; margin-top: 20px;'):
+                        for stream in video_streams:
+                            ui.button(stream.split("/")[-1], on_click=lambda s=stream: change_stream(s))
+                else:  # Default page if no streams provided
                     with ui.column():
                         ui.label("No Active Streams").style('font-size: 36px; font-weight: bold; color: #6E93D6;')
-                        ui.label("add streams with the --video-streams argument").style('font-weight: bold;')
-            
+                        ui.label("Add streams with the --video-streams argument").style('font-weight: bold;')
         
         #queries 
         ui.query('header').style(f'background-color: #292f48')
