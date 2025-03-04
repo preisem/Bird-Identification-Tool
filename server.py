@@ -21,7 +21,7 @@ from nicegui import events, app, ui
 logger = logging.getLogger(__name__)
 
 
-def main(detections_directory: Path, directory_watcher: Path):
+def main(detections_directory: Path, directory_watcher: Path, video_streams):
     ''' START '''
     date_today_str = datetime.now().strftime("%Y-%m-%d")
     logger.info("Starting Bird Server: " + str(date_today_str))
@@ -189,6 +189,44 @@ def main(detections_directory: Path, directory_watcher: Path):
         ui.query('header').style(f'background-color: #292f48')
         ui.query('body').style(f'background-color: #42849b')
         
+    ''' VIDEO STREAM ROUTE ''' 
+    @ui.page('/video')
+    def readme_page() -> None:
+        def logout() -> None:
+            app.storage.user.clear()
+            ui.navigate.to('/login')
+            
+        ui.page_title('Bird Identification Tool') 
+        
+        ''' call function to generate header bar '''
+        with ui.header():
+            generate_header(route='/video',ui=ui) 
+            ui.button(on_click=logout, icon='logout').classes("h-11") # logout button
+        
+        ''' load streams from input as urls into tabs '''
+        with ui.card().style('align-items: center;').classes('absolute-center'):
+            with ui.row():
+                # Create a placeholder for the stream display
+                if video_streams:
+                    stream_display = ui.image(video_streams[0]).style('width: 100%; height: auto;')
+
+                    # Define a function to update the displayed stream
+                    def change_stream(stream_url):
+                        stream_display.set_source(stream_url)  # Update the image source
+
+                    # Create buttons for each stream
+                    for stream in video_streams:
+                        ui.button(stream.split("/")[-1], on_click=lambda s=stream: change_stream(s))
+                else: # default page if no streams provided
+                    with ui.column():
+                        ui.label("No Active Streams").style('font-size: 36px; font-weight: bold; color: #6E93D6;')
+                        ui.label("add streams with the --video-streams argument").style('font-weight: bold;')
+            
+        
+        #queries 
+        ui.query('header').style(f'background-color: #292f48')
+        ui.query('body').style(f'background-color: #42849b')
+        
     ''' MARKDOWN README ROUTE '''
     @ui.page('/readme')
     def readme_page() -> None:
@@ -251,13 +289,20 @@ def generate_header(route: str, ui):
         ''' create buttons to other pages depending on what page the header is on '''
         if route == "/":
             ui.button('Analysis', on_click=lambda: ui.navigate.to('/analysis')).classes("h-11") # button link to /analysis
+            ui.button('Live Video', on_click=lambda: ui.navigate.to('/video')).classes("h-11") # button link to /video
             ui.button('Readme', on_click=lambda: ui.navigate.to('/readme')).classes("h-11") # button link to /readme
         elif route == "/analysis":
             ui.button('Dashboard', on_click=lambda: ui.navigate.to('/')).classes("h-11")
+            ui.button('Live Video', on_click=lambda: ui.navigate.to('/video')).classes("h-11") # button link to /video
             ui.button('Readme', on_click=lambda: ui.navigate.to('/readme')).classes("h-11")
         elif route == "/readme":
             ui.button('Dashboard', on_click=lambda: ui.navigate.to('/')).classes("h-11")
             ui.button('Analysis', on_click=lambda: ui.navigate.to('/analysis')).classes("h-11")
+            ui.button('Live Video', on_click=lambda: ui.navigate.to('/video')).classes("h-11") # button link to /video
+        elif route == "/video":
+            ui.button('Dashboard', on_click=lambda: ui.navigate.to('/')).classes("h-11")
+            ui.button('Analysis', on_click=lambda: ui.navigate.to('/analysis')).classes("h-11")
+            ui.button('Readme', on_click=lambda: ui.navigate.to('/readme')).classes("h-11")
             
 def generate_table_data_from_file(file_path: Path):
     rows = []
@@ -412,6 +457,7 @@ def parse_args():
     input_group = parser.add_argument_group("Input")
     input_group.add_argument("--detections-directory",type=Path,required=False,default=Path("./detections/"),help="Path to directory where detections from node analyzers are saved")
     input_group.add_argument("--directory-watcher",type=Path,required=False,help="Path to directory that the size in GB will be reported to the dashboard")
+    input_group.add_argument("--video-streams",type=str,nargs="*",required=False,help="List of live stream urls to display on /video endpoint") # 1 or more stream urls with nargs="*"
 
     # Command line arguments for logging configuration.
     logging_group = parser.add_argument_group('Logging')
@@ -449,7 +495,7 @@ if __name__ in {"__main__", "__mp_main__"}: #to allow server to run within mp
         )
         
         ''' run main '''
-        main(args.detections_directory, args.directory_watcher)
+        main(args.detections_directory, args.directory_watcher, args.video_streams)
     except Exception as e:
         logger.error(f'Unknown exception of type: {type(e)} - {e}')
         raise e
