@@ -33,19 +33,20 @@ python -m pip install -r requirements.txt
 
 ## CMD Line Args
 ### Node
-- ```--camera```: ```int``` X of camera device where device name = ```/dev/videoX``` This will create a local video stream with flask on port 5000
+- ```--camera```: ```int``` X of camera device where device name = ```/dev/videoX``` This will create a local video stream with flask on port 5000 (optional)
 - ```--mic```: ```str``` name of microphone device, can be found using command ```arecord -L```
 - ```--location ```: ```float, tuple``` GPS location of devices using tuple such like: lat lon
-- ```--node-name ```: ```str``` Name of node
-- ```--min-confidence ```: ```float``` Minimum confidence of model for audio detection (default=0.2, range=0.0<x<1.0)
-- ```--save-audio ```: ```str``` Choice to save audio recordings (always,never,detections-only, default=detections-only)
-- ```--recordings-directory```: ```pathlib.Path``` path of directory to save audio recordings to
-- ```--detections-directory```: ```pathlib.Path``` path of directory to save jsonl data of detected birds
-- ```--log-file-path```: ```pathlib.Path``` parth to directory to save log files
+- ```--node-name ```: ```str``` Name of node (optional)
+- ```--min-confidence ```: ```float``` Minimum confidence of model for audio detection (default=0.2, range=0.0<x<1.0) (optional)
+- ```--save-audio ```: ```str``` Choice to save audio recordings (always,never,detections-only, default=detections-only) (optional)
+- ```--recordings-directory```: ```pathlib.Path``` path of directory to save audio recordings to (optional)
+- ```--detections-directory```: ```pathlib.Path``` path of directory to save jsonl data of detected birds (optional)
+- ```--log-file-path```: ```pathlib.Path``` parth to directory to save log files (optional)
 ### Server
-- ```--detections-directory```: ```pathlib.Path``` path of directory to load jsonl data of detected birds
+- ```--detections-directory```: ```pathlib.Path``` path of directory to load jsonl data of detected birds (optional)
 - ```--directory-wathcer```: ```pathlib.Path``` path to directory that the size in GB will be reported to the dashboard (optional)
-- ```--log-file-path```: ```pathlib.Path``` parth to directory to save log files
+- ```--video-streams```: ```str list``` space-delimited list of urls to live video streams that will be displayed on the /video page (optional)
+- ```--log-file-path```: ```pathlib.Path``` parth to directory to save log files (optional)
 
 ## JSON Output Data Schema 
 |field-name|data-type|description|example|
