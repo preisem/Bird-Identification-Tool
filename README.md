@@ -31,6 +31,16 @@ python -m pip install -r requirements.txt
 - check the audio device names using ```arecord -L```
 - check the video device names using ```v4l2-ctl --list-devices```
 
+## Endpoints
+### Node
+- ```:5000/<node_name>```: if --camera is provided, an endpoint with a stream of the camera is created based on the value of --node_name (default=default)
+### Server
+- ```:8000/```: this is the homepage with a daily dashboard display
+- ```:8000/login```: login splash page, login is admin:password (obviously not production ready)
+- ```:8000/analysis```: this page displays a table of the daily data, along with charts similar to v1 server
+- ```:8000/video```: if any streams are provided with --video-streams, they will be displayed on this page
+- ```:8000/readme```: page displaying the contents of the GitHub repo README.md 
+
 ## CMD Line Args
 ### Node
 - ```--camera```: ```int``` X of camera device where device name = ```/dev/videoX``` This will create a local video stream with flask on port 5000 (optional)
