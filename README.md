@@ -3,7 +3,7 @@
 [![Python application](https://github.com/preisem/Bird-Identification-Tool/actions/workflows/python-app.yml/badge.svg)](https://github.com/preisem/Bird-Identification-Tool/actions/workflows/python-app.yml)
 [![BirdNetLib](https://img.shields.io/static/v1?&message=birdnetlib&logo=pypi&labelColor=5c5c5c&color=f27b3a&logoColor=white&label=%20)](https://pypi.org/project/birdnetlib/)
 [![NiceGUI](https://img.shields.io/static/v1?&message=NiceGUI&logo=pypi&labelColor=5c5c5c&color=609867&logoColor=white&label=%20)](https://pypi.org/project/nicegui/)
-[![Ubuntu](https://img.shields.io/badge/Ubuntu-E95420?style=for-the-badge&logo=Ubuntu&logoColor=white)](https://ubuntu.com/blog/tag/ubuntu-24-04-lts)
+[![Ubuntu](https://img.shields.io/badge/Ubuntu-E95420?logo=ubuntu&logoColor=white)](#)
 
 This tool is split into 2 main parts:
 - Node (main.py): Nodes collect and analyze audio (and eventually video) and save bird detections to daily jsonl files
