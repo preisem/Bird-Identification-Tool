@@ -3,7 +3,7 @@
 [![Python application](https://github.com/preisem/Bird-Identification-Tool/actions/workflows/python-app.yml/badge.svg)](https://github.com/preisem/Bird-Identification-Tool/actions/workflows/python-app.yml)
 [![BirdNetLib](https://img.shields.io/static/v1?&message=birdnetlib&logo=pypi&labelColor=5c5c5c&color=f27b3a&logoColor=white&label=%20)](https://pypi.org/project/birdnetlib/)
 [![NiceGUI](https://img.shields.io/static/v1?&message=NiceGUI&logo=pypi&labelColor=5c5c5c&color=609867&logoColor=white&label=%20)](https://pypi.org/project/nicegui/)
-[![Ubuntu](https://img.shields.io/badge/Ubuntu-E95420?style=for-the-badge&logo=Ubuntu&logoColor=white)](https://ubuntu.com/blog/tag/ubuntu-24-04-lts)
+[![Ubuntu](https://img.shields.io/badge/Ubuntu-E95420?logo=ubuntu&logoColor=white)](#)
 
 This tool is split into 2 main parts:
 - Node (main.py): Nodes collect and analyze audio (and eventually video) and save bird detections to daily jsonl files
@@ -31,21 +31,33 @@ python -m pip install -r requirements.txt
 - check the audio device names using ```arecord -L```
 - check the video device names using ```v4l2-ctl --list-devices```
 
+## Endpoints
+### Node
+- ```:5000/<node_name>```: if --camera is provided, an endpoint with a stream of the camera is created based on the value of --node_name (default=default)
+### Server
+- ```:8000/```: this is the homepage with a daily dashboard display
+- ```:8000/login```: login splash page, login is admin:password (obviously not production ready)
+- ```:8000/analysis```: this page displays a table of the daily data, along with charts similar to v1 server
+- ```:8000/video```: if any streams are provided with --video-streams, they will be displayed on this page
+- ```:8000/readme```: page displaying the contents of the GitHub repo README.md 
+
 ## CMD Line Args
 ### Node
-- ```--camera```: ```int``` X of camera device where device name = ```/dev/videoX```
+- ```--camera```: ```int``` X of camera device where device name = ```/dev/videoX``` This will create a local video stream with flask on port 5000 (optional)
 - ```--mic```: ```str``` name of microphone device, can be found using command ```arecord -L```
 - ```--location ```: ```float, tuple``` GPS location of devices using tuple such like: lat lon
-- ```--node-name ```: ```str``` Name of node
-- ```--min-confidence ```: ```float``` Minimum confidence of model for audio detection (default=0.2, range=0.0<x<1.0)
-- ```--save-audio ```: ```str``` Choice to save audio recordings (always,never,detections-only, default=detections-only)
-- ```--recordings-directory```: ```pathlib.Path``` path of directory to save audio recordings to
-- ```--detections-directory```: ```pathlib.Path``` path of directory to save jsonl data of detected birds
-- ```--log-file-path```: ```pathlib.Path``` parth to directory to save log files
+- ```--node-name ```: ```str``` Name of node (optional)
+- ```--min-confidence ```: ```float``` Minimum confidence of model for audio detection (default=0.2, range=0.0<x<1.0) (optional)
+- ```--save-audio ```: ```str``` Choice to save audio recordings (always,never,detections-only, default=detections-only) (optional)
+- ```--recordings-directory```: ```pathlib.Path``` path of directory to save audio recordings to (optional)
+- ```--detections-directory```: ```pathlib.Path``` path of directory to save jsonl data of detected birds (optional)
+- ```--log-file-path```: ```pathlib.Path``` parth to directory to save log files (optional)
 ### Server
-- ```--detections_directory```: ```pathlib.Path``` path of directory to load jsonl data of detected birds
-- ```--directory_wathcer```: ```pathlib.Path``` path to directory that the size in GB will be reported to the dashboard (optional)
-- ```--log-file-path```: ```pathlib.Path``` parth to directory to save log files
+- ```--detections-directory```: ```pathlib.Path``` path of directory to load jsonl data of detected birds (optional)
+- ```--directory-wathcer```: ```pathlib.Path``` path to directory that the size in GB will be reported to the dashboard (optional)
+- ```--video-streams```: ```str list``` space-delimited list of urls to live video streams that will be displayed on the /video page (optional)
+- ```--log-file-path```: ```pathlib.Path``` parth to directory to save log files (optional)
+- ```--authentication```: *WIP* turns on authentication with login page
 
 ## JSON Output Data Schema 
 |field-name|data-type|description|example|

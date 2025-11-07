@@ -1,83 +1,315 @@
-'''Server for Bird Migration Tool'''
-
+#!/usr/bin/env python3
+"""
+Bird Identification Tool Web Server
+- Simple authentication is based on NiceGUI example
+- Not production ready, oauth and password hashing are not implemented
+- resources:
+    <https://fastapi.tiangolo.com/tutorial/security/simple-oauth2/>
+    <https://docs.authlib.org/en/v0.13/client/starlette.html#using-fastapi>
+"""
 import json, time, argparse, logging, os, sys
-
-from nicegui import events, ui
+from typing import Optional
 from pathlib import Path
 from datetime import datetime
 
+from fastapi import Request
+from fastapi.responses import RedirectResponse
+from starlette.middleware.base import BaseHTTPMiddleware
+
+from nicegui import events, app, ui
+
 logger = logging.getLogger(__name__)
 
-def main(detections_directory: Path, directory_watcher: Path):
+
+def main(detections_directory: Path, directory_watcher: Path, video_streams, authentication: bool):
     ''' START '''
     date_today_str = datetime.now().strftime("%Y-%m-%d")
     logger.info("Starting Bird Server: " + str(date_today_str))
     
-    ''' title of page '''
-    ui.page_title('Bird Identification Tool')
-    
-    ''' load data from jsonl file into detections_data'''
+    ''' load detections data '''
     detections_file = detections_directory / Path("detections-"+ datetime.now().strftime("%Y-%m-%d") + ".jsonl")
     detections_data = generate_table_data_from_file(detections_file)
-    
-    ''' PLACE OBJECTS ON SCREEN '''
-    ui.query('.nicegui-content').classes('h-screen')
-    
-    with ui.splitter(value=35) as splitter:
-        with splitter.before: # LEFT SIDE OBJECTS
+       
+    ''' Authentication (WIP)'''
+    if authentication:
+        passwords = {'admin': 'password'}
+        unrestricted_page_routes = {'/login'}
+
+        ''' define classes and functions for each route '''
+        class AuthMiddleware(BaseHTTPMiddleware):
+            """
+            This middleware restricts access to all NiceGUI pages.
+            It redirects the user to the login page if they are not authenticated.
+            """
+            async def dispatch(self, request: Request, call_next):
+                if not app.storage.user.get('authenticated', False):
+                    if not request.url.path.startswith('/_nicegui') and request.url.path not in unrestricted_page_routes:
+                        app.storage.user['referrer_path'] = request.url.path  # remember where the user wanted to go
+                        return RedirectResponse('/login')
+                return await call_next(request)
+
+        app.add_middleware(AuthMiddleware)
+
+    ''' MAIN ROUTE / '''
+    @ui.page('/')
+    def main_page() -> None:
+        if authentication:
+            def logout() -> None:
+                app.storage.user.clear()
+                ui.navigate.to('/login')
         
-            ''' create table object using data and headers '''
-            table = ui.table(rows=detections_data, title='Audio Detections Today (' + str(len(detections_data)) + ')', pagination={'rowsPerPage': 10, 'descending': True, 'sortBy': 'start_ts'},).classes('w-full')
-            table.add_slot('body-cell-confidence', '''
-    <q-td key="confidence" :props="props">
-        <q-badge :color="props.value < 0.25 ? 'red' : props.value < 0.5 ? 'orange' : props.value < 0.75 ? 'yellow' : 'green'">
-            {{ props.value }}
-        </q-badge>
-    </q-td>
-''')
-                                                   
-              
-        with splitter.after: # RIGHT SIDE
-            ''' create tabs to display graphs '''
-            with ui.tabs() as tabs:
-                one = ui.tab('Species Distribution')
-                two = ui.tab('Model Confidence')
-                three = ui.tab('Detections over Time')
-            with ui.tab_panels(tabs, value=one):
-                with ui.tab_panel(one):
-                    ''' distribution by species pie chart '''
-                    piechart = generate_pie_chart_object(pie_type="species-distro", input_data=detections_data)
-                with ui.tab_panel(two):
-                    ''' avg model confidence bar chart '''
-                    barchart = generate_bar_chart_object(bar_type="species-confidence", input_data=detections_data)
-                with ui.tab_panel(three):
-                    linechart = generate_line_chart_object(input_data=detections_data)
-            
-            dark = ui.dark_mode()
-            with ui.row():
-                with ui.card():
-                    with ui.row():
-                            ui.switch( on_change= dark.toggle)  
-                            ui.icon('dark_mode', color='primary').classes('text-4xl')                    
-                if directory_watcher:    
+        
+        ''' title of page '''
+        ui.page_title('Bird Identification Tool')          
+    
+        ''' call function to generate header bar '''
+        with ui.header():
+            generate_header(route='/',ui=ui, authentication=authentication) 
+            if authentication:
+                ui.button(on_click=logout, icon='logout').classes("h-11") # logout button
+        
+        ''' MAIN DASHBOARD CARDS '''
+        with ui.card().classes('absolute-center').style('align-items: center;'):
+            with ui.column():
+                with ui.row():
+                    ''' today's date card '''
                     with ui.card():
-                        with ui.row():
-                            ''' get dir size, color icon depending on disk usage '''
-                            dir_size = get_directory_size(directory_watcher)
-                            if dir_size > 5: #critical 5gb used
-                                color_usage = 'red'
-                            elif dir_size > 3: #warning 3gb used
-                                color_usage = 'orange'
-                            else:
-                                color_usage = 'green'
+                        ui.label(datetime.now().strftime("%A, %B %-d, %Y")).style('font-size: 36px; font-weight: bold;')
+            
+            with ui.column():
+                with ui.row():
+                    ''' total detections today card '''
+                    with ui.card():
+                        with ui.column().style('align-items: center;'):
+                            ui.label('Audio Detections').style('font-weight: bold')
+                            ui.label(str(len(detections_data))).style('font-size: 36px; font-weight: bold; color: #6E93D6;')
+                            # .style('color: #6E93D6; font-size: 200%; font-weight: 300').classes('absolute-center')
+                
+                    ''' recent identification card '''
+                    with ui.card():
+                        with ui.column().style('align-items: center;'):
+                            ui.label('Most Recent Identification').style('font-weight: bold')
+                            try:
+                                ui.label(detections_data[-1]["common_name"]).style('font-size: 36px; font-weight: bold; color: #6E93D6;')
+                                ui.audio(detections_data[-1]["filename"])# later use .seek() to start 1s before the start of detection
+                                #ui.markdown(str(detections_data[-1]["start_ts"]))
+                            except:
+                                ui.label("None").style('font-size: 36px; font-weight: bold; color: #6E93D6;')
+                            
+                    ''' average model confidence card '''
+                    with ui.card():
+                        with ui.column().style('align-items: center;'):
+                            ui.label('Model Confidence').style('font-weight: bold')
+                            ''' calculate average '''
+                            if detections_data:
+                                conf = 0
+                                for entry in detections_data:
+                                    conf = conf + float(entry["confidence"])                        
+                                model_conf = round(conf/len(detections_data),2)
+                                ''' conditional formatting color for model confidence '''
+                                if model_conf < .25:
+                                    model_color = "red"
+                                elif model_conf < .5:
+                                    model_color = "orange"
+                                elif model_conf < .75:
+                                    model_color = "orange"
+                                else:
+                                    model_color = "green"
                     
-                            ui.icon('folder_open', color=color_usage).classes('text-4xl')
-                            ui.markdown(str(dir_size) + "GB Used" )
-                     
-    ''' run server, reload when files are modified '''
-    ui.run(uvicorn_reload_includes='*.py, *.jsonl', favicon='🐦', show=False)
+                                #ui.label(str(model_conf)).style(f'font-size: 36px; font-weight: bold; color: {model_color};')
+                                ui.circular_progress(value=model_conf,color=model_color)
+                            else:
+                                ''' default style for model confidence '''
+                                ui.label("-").style('font-size: 36px; font-weight: bold; color: #6E93D6;')
+                    
+                    ''' directory watcher card '''
+                    if directory_watcher:    
+                        with ui.card():
+                            with ui.row():
+                                ''' get dir size, color icon depending on disk usage '''
+                                dir_size = get_directory_size(directory_watcher)
+                                if dir_size > 5: #critical 5gb used
+                                    color_usage = 'red'
+                                elif dir_size > 3: #warning 3gb used
+                                    color_usage = 'orange'
+                                else:
+                                    color_usage = 'green'
+                                    
+                                with ui.column().style('align-items: center;'):
+                                    ui.label('Storage Usage').style('font-weight: bold')
+                                    ui.icon('folder_open', color=color_usage).classes('text-5xl')
+                                    ui.markdown(str(dir_size) + "GB Used" )           
+                            
+        ''' queries '''
+        ui.query('header').style(f'background-color: #292f48')
+        ui.query('body').style(f'background-color: #42849b')
+    
+    
+    ''' FULL ANALYSIS ROUTE /analysis '''
+    @ui.page('/analysis')
+    def analysis_page() -> None:
+        def logout() -> None:
+            app.storage.user.clear()
+            ui.navigate.to('/login')
+            
+        ui.page_title('Bird Identification Tool') 
+        
+        ''' call function to generate header bar '''
+        with ui.header():
+            generate_header(route='/analysis',ui=ui, authentication=authentication) 
+            ui.button(on_click=logout, icon='logout').classes("h-11") # logout button
+            
+        with ui.card().classes('overflow-auto fixed-center'):
+            with ui.card():
+                with ui.tabs() as tabs:
+                    one = ui.tab('Detections Today')
+                    two = ui.tab('Species Distribution')
+                    three = ui.tab('Model Confidence')
+                    four = ui.tab('Detections over Time')
+                with ui.tab_panels(tabs, value=one):
+                    with ui.tab_panel(one):
+                        ''' create table object using data and headers '''
+                        table = ui.table(rows=detections_data, pagination={'rowsPerPage': 10, 'descending': True, 'sortBy': 'start_ts'},)
+                        ''' add quasar conditional formatting for model confidence '''
+                        table.add_slot('body-cell-confidence', '''
+                        <q-td key="confidence" :props="props">
+                            <q-badge :color="props.value < 0.25 ? 'red' : props.value < 0.5 ? 'orange' : props.value < 0.75 ? 'yellow' : 'green'">
+                                {{ props.value }}
+                            </q-badge>
+                        </q-td>
+                        ''')
+                    with ui.tab_panel(two):
+                        ''' distribution by species pie chart '''
+                        piechart = generate_pie_chart_object(pie_type="species-distro", input_data=detections_data)
+                    with ui.tab_panel(three):
+                        ''' avg model confidence bar chart '''
+                        barchart = generate_bar_chart_object(bar_type="species-confidence", input_data=detections_data)
+                    with ui.tab_panel(four):
+                        linechart = generate_line_chart_object(input_data=detections_data)
+           
+        #queries 
+        ui.query('header').style(f'background-color: #292f48')
+        ui.query('body').style(f'background-color: #42849b')
+        
+    ''' VIDEO STREAM ROUTE ''' 
+    @ui.page('/video')
+    def readme_page() -> None:
+        def logout() -> None:
+            app.storage.user.clear()
+            ui.navigate.to('/login')
+            
+        ui.page_title('Bird Identification Tool') 
+        
+        ''' call function to generate header bar '''
+        with ui.header():
+            generate_header(route='/video',ui=ui, authentication=authentication) 
+            ui.button(on_click=logout, icon='logout').classes("h-11") # logout button
 
 
+        ''' load streams from input as urls into a card with buttons at the bottom to chose the active stream to display '''
+        with ui.card().style('align-items: center; width: 50%; margin: auto;').classes('absolute-center'):
+            with ui.column().style('width: 100%; align-items: center;'):
+                # Create a placeholder for the stream display
+                if video_streams:
+                    # Set a larger width and height for the video display
+                    stream_display = ui.image(video_streams[0]).style('width: 100%; max-width: 800px; height: auto;')
+
+                    # Define a function to update the displayed stream
+                    def change_stream(stream_url):
+                        stream_display.set_source(stream_url)  # Update the image source
+
+                    # Create buttons for each stream
+                    with ui.row().style('justify-content: center; margin-top: 20px;'):
+                        for stream in video_streams:
+                            ui.button(stream.split("/")[-1], on_click=lambda s=stream: change_stream(s))
+                else:  # Default page if no streams provided
+                    with ui.column():
+                        ui.label("No Active Streams").style('font-size: 36px; font-weight: bold; color: #6E93D6;')
+                        ui.label("Add streams with the --video-streams argument").style('font-weight: bold;')
+        
+        #queries 
+        ui.query('header').style(f'background-color: #292f48')
+        ui.query('body').style(f'background-color: #42849b')
+        
+    ''' MARKDOWN README ROUTE '''
+    @ui.page('/readme')
+    def readme_page() -> None:
+        def logout() -> None:
+            app.storage.user.clear()
+            ui.navigate.to('/login')
+            
+        ui.page_title('Bird Identification Tool') 
+        
+        ''' call function to generate header bar '''
+        with ui.header():
+            generate_header(route='/readme',ui=ui, authentication=authentication) 
+            ui.button(on_click=logout, icon='logout').classes("h-11") # logout button
+        
+        ''' load the readme file into a markdown element '''
+        with ui.card():
+            with open('README.md', 'r') as readme_in:
+                ui.markdown(readme_in.read())
+        
+            
+        #queries 
+        ui.query('header').style(f'background-color: #292f48')
+        ui.query('body').style(f'background-color: #42849b')
+            
+            
+    ''' LOGIN ROUTE /login '''
+    if authentication:
+        @ui.page('/login')
+        def login() -> Optional[RedirectResponse]:
+            ui.page_title('Hickory Lane Bird Watchers')
+            def try_login() -> None:  # local function to avoid passing username and password as arguments
+                if passwords.get(username.value) == password.value:
+                    app.storage.user.update({'username': username.value, 'authenticated': True})
+                    ui.navigate.to(app.storage.user.get('referrer_path', '/'))  # go back to where the user wanted to go
+                else:
+                    ui.notify('Wrong username or password', color='negative')
+
+            if app.storage.user.get('authenticated', False):
+                return RedirectResponse('/')
+            with ui.card().classes('absolute-center'):
+                ui.image('img/logo.png')
+                username = ui.input('Username').on('keydown.enter', try_login)
+                password = ui.input('Password', password=True, password_toggle_button=True).on('keydown.enter', try_login)
+                ui.button('Log in', on_click=try_login)
+            #queries
+            ui.query('body').style(f'background-color: #42849b')
+            return None
+        
+
+    ''' RUN ''' 
+    ui.run(uvicorn_reload_includes='*.py, *.jsonl', storage_secret='THIS_NEEDS_TO_BE_CHANGED', show=False, favicon='🐦')
+    
+
+def generate_header(route: str, ui, authentication: bool):
+        ''' all pages get the welcome banner '''
+        ui.image("img/icon.png").classes("h-12 w-12") #logo icon
+        if authentication:
+            username = app.storage.user["username"][0].upper() + app.storage.user["username"][1:] #uppercase the first letter
+            ui.label(f'Hello {username}!').style('color: #FFFFFF; font-size: 200%; font-weight: 300') # header banner
+        ui.space() # creates space between left justified and right justified items
+        
+        ''' create buttons to other pages depending on what page the header is on '''
+        if route == "/":
+            ui.button('Analysis', on_click=lambda: ui.navigate.to('/analysis')).classes("h-11") # button link to /analysis
+            ui.button('Live Video', on_click=lambda: ui.navigate.to('/video')).classes("h-11") # button link to /video
+            ui.button('Readme', on_click=lambda: ui.navigate.to('/readme')).classes("h-11") # button link to /readme
+        elif route == "/analysis":
+            ui.button('Dashboard', on_click=lambda: ui.navigate.to('/')).classes("h-11")
+            ui.button('Live Video', on_click=lambda: ui.navigate.to('/video')).classes("h-11") # button link to /video
+            ui.button('Readme', on_click=lambda: ui.navigate.to('/readme')).classes("h-11")
+        elif route == "/readme":
+            ui.button('Dashboard', on_click=lambda: ui.navigate.to('/')).classes("h-11")
+            ui.button('Analysis', on_click=lambda: ui.navigate.to('/analysis')).classes("h-11")
+            ui.button('Live Video', on_click=lambda: ui.navigate.to('/video')).classes("h-11") # button link to /video
+        elif route == "/video":
+            ui.button('Dashboard', on_click=lambda: ui.navigate.to('/')).classes("h-11")
+            ui.button('Analysis', on_click=lambda: ui.navigate.to('/analysis')).classes("h-11")
+            ui.button('Readme', on_click=lambda: ui.navigate.to('/readme')).classes("h-11")
+            
 def generate_table_data_from_file(file_path: Path):
     rows = []
     try:
@@ -89,7 +321,7 @@ def generate_table_data_from_file(file_path: Path):
         logger.error("Exception while generating table: " + str(e))            
     
     return rows
-    
+
 def generate_pie_chart_object(pie_type: str, input_data):
     ''' create data, then series, then chart '''
     if pie_type=="species-distro":
@@ -197,6 +429,7 @@ def generate_line_chart_object(input_data):
 
     return chart
 
+
 def get_directory_size(path: Path):
     path = str(path)
     total_size = 0
@@ -208,7 +441,7 @@ def get_directory_size(path: Path):
                 total_size += os.path.getsize(fp)
     size_gb = round(float(total_size / 1000000000),2)
     return size_gb
-        
+
 def set_up_logging(packages, log_level, log_file):
     '''Set up logging for specific packages/modules.'''
     formatter = logging.Formatter('%(asctime)s - %(process)d - %(levelname)s - %(message)s')
@@ -230,7 +463,9 @@ def parse_args():
     input_group = parser.add_argument_group("Input")
     input_group.add_argument("--detections-directory",type=Path,required=False,default=Path("./detections/"),help="Path to directory where detections from node analyzers are saved")
     input_group.add_argument("--directory-watcher",type=Path,required=False,help="Path to directory that the size in GB will be reported to the dashboard")
-
+    input_group.add_argument("--video-streams",type=str,nargs="*",required=False,help="List of live stream urls to display on /video endpoint") # 1 or more stream urls with nargs="*"
+    input_group.add_argument("--authentication",action="store_true", help="Enable authentication (omit to keep it False)")
+    
     # Command line arguments for logging configuration.
     logging_group = parser.add_argument_group('Logging')
     log_choices = ['DEBUG', 'CRITICAL', 'FATAL', 'ERROR', 'WARNING', 'WARN', 'INFO', 'NOTSET']
@@ -267,7 +502,7 @@ if __name__ in {"__main__", "__mp_main__"}: #to allow server to run within mp
         )
         
         ''' run main '''
-        main(args.detections_directory, args.directory_watcher)
+        main(args.detections_directory, args.directory_watcher, args.video_streams, args.authentication)
     except Exception as e:
         logger.error(f'Unknown exception of type: {type(e)} - {e}')
         raise e
