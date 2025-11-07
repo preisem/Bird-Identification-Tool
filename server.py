@@ -21,7 +21,7 @@ from nicegui import events, app, ui
 logger = logging.getLogger(__name__)
 
 
-def main(detections_directory: Path, directory_watcher: Path, video_streams):
+def main(detections_directory: Path, directory_watcher: Path, video_streams, authentication: bool):
     ''' START '''
     date_today_str = datetime.now().strftime("%Y-%m-%d")
     logger.info("Starting Bird Server: " + str(date_today_str))
@@ -31,31 +31,32 @@ def main(detections_directory: Path, directory_watcher: Path, video_streams):
     detections_data = generate_table_data_from_file(detections_file)
        
     ''' Authentication (WIP)'''
-    passwords = {'admin': 'password'}
+    if authentication:
+        passwords = {'admin': 'password'}
+        unrestricted_page_routes = {'/login'}
 
-    unrestricted_page_routes = {'/login'}
+        ''' define classes and functions for each route '''
+        class AuthMiddleware(BaseHTTPMiddleware):
+            """
+            This middleware restricts access to all NiceGUI pages.
+            It redirects the user to the login page if they are not authenticated.
+            """
+            async def dispatch(self, request: Request, call_next):
+                if not app.storage.user.get('authenticated', False):
+                    if not request.url.path.startswith('/_nicegui') and request.url.path not in unrestricted_page_routes:
+                        app.storage.user['referrer_path'] = request.url.path  # remember where the user wanted to go
+                        return RedirectResponse('/login')
+                return await call_next(request)
 
-    ''' define classes and functions for each route '''
-    class AuthMiddleware(BaseHTTPMiddleware):
-        """
-        This middleware restricts access to all NiceGUI pages.
-        It redirects the user to the login page if they are not authenticated.
-        """
-        async def dispatch(self, request: Request, call_next):
-            if not app.storage.user.get('authenticated', False):
-                if not request.url.path.startswith('/_nicegui') and request.url.path not in unrestricted_page_routes:
-                    app.storage.user['referrer_path'] = request.url.path  # remember where the user wanted to go
-                    return RedirectResponse('/login')
-            return await call_next(request)
-
-    app.add_middleware(AuthMiddleware)
+        app.add_middleware(AuthMiddleware)
 
     ''' MAIN ROUTE / '''
     @ui.page('/')
     def main_page() -> None:
-        def logout() -> None:
-            app.storage.user.clear()
-            ui.navigate.to('/login')
+        if authentication:
+            def logout() -> None:
+                app.storage.user.clear()
+                ui.navigate.to('/login')
         
         
         ''' title of page '''
@@ -63,8 +64,9 @@ def main(detections_directory: Path, directory_watcher: Path, video_streams):
     
         ''' call function to generate header bar '''
         with ui.header():
-            generate_header(route='/',ui=ui) 
-            ui.button(on_click=logout, icon='logout').classes("h-11") # logout button
+            generate_header(route='/',ui=ui, authentication=authentication) 
+            if authentication:
+                ui.button(on_click=logout, icon='logout').classes("h-11") # logout button
         
         ''' MAIN DASHBOARD CARDS '''
         with ui.card().classes('absolute-center').style('align-items: center;'):
@@ -154,7 +156,7 @@ def main(detections_directory: Path, directory_watcher: Path, video_streams):
         
         ''' call function to generate header bar '''
         with ui.header():
-            generate_header(route='/analysis',ui=ui) 
+            generate_header(route='/analysis',ui=ui, authentication=authentication) 
             ui.button(on_click=logout, icon='logout').classes("h-11") # logout button
             
         with ui.card().classes('overflow-auto fixed-center'):
@@ -200,7 +202,7 @@ def main(detections_directory: Path, directory_watcher: Path, video_streams):
         
         ''' call function to generate header bar '''
         with ui.header():
-            generate_header(route='/video',ui=ui) 
+            generate_header(route='/video',ui=ui, authentication=authentication) 
             ui.button(on_click=logout, icon='logout').classes("h-11") # logout button
 
 
@@ -240,7 +242,7 @@ def main(detections_directory: Path, directory_watcher: Path, video_streams):
         
         ''' call function to generate header bar '''
         with ui.header():
-            generate_header(route='/readme',ui=ui) 
+            generate_header(route='/readme',ui=ui, authentication=authentication) 
             ui.button(on_click=logout, icon='logout').classes("h-11") # logout button
         
         ''' load the readme file into a markdown element '''
@@ -255,37 +257,39 @@ def main(detections_directory: Path, directory_watcher: Path, video_streams):
             
             
     ''' LOGIN ROUTE /login '''
-    @ui.page('/login')
-    def login() -> Optional[RedirectResponse]:
-        ui.page_title('Hickory Lane Bird Watchers')
-        def try_login() -> None:  # local function to avoid passing username and password as arguments
-            if passwords.get(username.value) == password.value:
-                app.storage.user.update({'username': username.value, 'authenticated': True})
-                ui.navigate.to(app.storage.user.get('referrer_path', '/'))  # go back to where the user wanted to go
-            else:
-                ui.notify('Wrong username or password', color='negative')
+    if authentication:
+        @ui.page('/login')
+        def login() -> Optional[RedirectResponse]:
+            ui.page_title('Hickory Lane Bird Watchers')
+            def try_login() -> None:  # local function to avoid passing username and password as arguments
+                if passwords.get(username.value) == password.value:
+                    app.storage.user.update({'username': username.value, 'authenticated': True})
+                    ui.navigate.to(app.storage.user.get('referrer_path', '/'))  # go back to where the user wanted to go
+                else:
+                    ui.notify('Wrong username or password', color='negative')
 
-        if app.storage.user.get('authenticated', False):
-            return RedirectResponse('/')
-        with ui.card().classes('absolute-center'):
-            ui.image('img/logo.png')
-            username = ui.input('Username').on('keydown.enter', try_login)
-            password = ui.input('Password', password=True, password_toggle_button=True).on('keydown.enter', try_login)
-            ui.button('Log in', on_click=try_login)
-        #queries
-        ui.query('body').style(f'background-color: #42849b')
-        return None
+            if app.storage.user.get('authenticated', False):
+                return RedirectResponse('/')
+            with ui.card().classes('absolute-center'):
+                ui.image('img/logo.png')
+                username = ui.input('Username').on('keydown.enter', try_login)
+                password = ui.input('Password', password=True, password_toggle_button=True).on('keydown.enter', try_login)
+                ui.button('Log in', on_click=try_login)
+            #queries
+            ui.query('body').style(f'background-color: #42849b')
+            return None
         
 
     ''' RUN ''' 
     ui.run(uvicorn_reload_includes='*.py, *.jsonl', storage_secret='THIS_NEEDS_TO_BE_CHANGED', show=False, favicon='🐦')
     
 
-def generate_header(route: str, ui):
+def generate_header(route: str, ui, authentication: bool):
         ''' all pages get the welcome banner '''
-        username = app.storage.user["username"][0].upper() + app.storage.user["username"][1:] #uppercase the first letter
         ui.image("img/icon.png").classes("h-12 w-12") #logo icon
-        ui.label(f'Hello {username}!').style('color: #FFFFFF; font-size: 200%; font-weight: 300') # header banner
+        if authentication:
+            username = app.storage.user["username"][0].upper() + app.storage.user["username"][1:] #uppercase the first letter
+            ui.label(f'Hello {username}!').style('color: #FFFFFF; font-size: 200%; font-weight: 300') # header banner
         ui.space() # creates space between left justified and right justified items
         
         ''' create buttons to other pages depending on what page the header is on '''
@@ -460,7 +464,8 @@ def parse_args():
     input_group.add_argument("--detections-directory",type=Path,required=False,default=Path("./detections/"),help="Path to directory where detections from node analyzers are saved")
     input_group.add_argument("--directory-watcher",type=Path,required=False,help="Path to directory that the size in GB will be reported to the dashboard")
     input_group.add_argument("--video-streams",type=str,nargs="*",required=False,help="List of live stream urls to display on /video endpoint") # 1 or more stream urls with nargs="*"
-
+    input_group.add_argument("--authentication",action="store_true", help="Enable authentication (omit to keep it False)")
+    
     # Command line arguments for logging configuration.
     logging_group = parser.add_argument_group('Logging')
     log_choices = ['DEBUG', 'CRITICAL', 'FATAL', 'ERROR', 'WARNING', 'WARN', 'INFO', 'NOTSET']
@@ -497,7 +502,7 @@ if __name__ in {"__main__", "__mp_main__"}: #to allow server to run within mp
         )
         
         ''' run main '''
-        main(args.detections_directory, args.directory_watcher, args.video_streams)
+        main(args.detections_directory, args.directory_watcher, args.video_streams, args.authentication)
     except Exception as e:
         logger.error(f'Unknown exception of type: {type(e)} - {e}')
         raise e
