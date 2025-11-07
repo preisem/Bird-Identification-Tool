@@ -57,6 +57,7 @@ python -m pip install -r requirements.txt
 - ```--directory-wathcer```: ```pathlib.Path``` path to directory that the size in GB will be reported to the dashboard (optional)
 - ```--video-streams```: ```str list``` space-delimited list of urls to live video streams that will be displayed on the /video page (optional)
 - ```--log-file-path```: ```pathlib.Path``` parth to directory to save log files (optional)
+- ```--authentication```: *WIP* turns on authentication with login page
 
 ## JSON Output Data Schema 
 |field-name|data-type|description|example|
