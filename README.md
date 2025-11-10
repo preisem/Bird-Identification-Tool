@@ -70,3 +70,17 @@ python -m pip install -r requirements.txt
 |location|string tuple '(float,float)'|location of the detection, expressed as a string tuple in format '(lat,lon)'|(42.01,-74.28)|
 |node_name|string|name of node|backyard-1|
 |filename|string pathlib.Path|filepath to audio file that the detection was made|sounds/2024-12-02-birdnet-11:43:35.wav|
+
+## Internal Packages Structure
+Some internal packages have been created to make the work flow a little cleaner. The server uses the ```webui``` package, while the node uses the ```tracking``` package.
+```mermaid
+graph LR
+  subgraph webui
+    routes[ routes ]
+    datacharts[ datacharts ]
+    auth[ auth ]
+  end
+  subgraph tracking
+    audio[ audio ]
+    video[ video ]
+  end
