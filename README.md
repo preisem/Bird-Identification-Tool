@@ -21,11 +21,11 @@ python -m pip install -r requirements.txt
 ## QuickStart
 ### Node
   ```
-  (myvenv) python main.py --camera 0 --mic sysdefault --location 42.0051 -74.2660 --recordings-directory path/to/folder --detections-directory path/to/folder --log-file-path path/to/folder 
+  python node.py --camera 0 --mic sysdefault --location 42.0051 -74.2660 --recordings-directory path/to/folder --detections-directory path/to/folder --log-file-path path/to/folder 
   ```
 ### Server
   ```
-  (myvenv) python server.py --detections-directory path/to/folder --log-file-path path/to/folder
+  python server.py --detections-directory path/to/folder --log-file-path path/to/folder
   ```
 ## Import Notes
 - check the audio device names using ```arecord -L```
