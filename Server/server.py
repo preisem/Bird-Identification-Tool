@@ -16,7 +16,7 @@ import webui #internal pacakage
 logger = logging.getLogger(__name__)
 
 
-def main(detections_directory: Path, directory_watcher: Path, video_streams, authentication: bool):
+def main(detections_directory: Path, directory_watcher: Path, video_streams, authentication: bool, analyze_video: bool):
     ''' START '''
     date_today_str = datetime.now().strftime("%Y-%m-%d")
     logger.info("Starting Bird Server: " + str(date_today_str))
@@ -24,6 +24,16 @@ def main(detections_directory: Path, directory_watcher: Path, video_streams, aut
     ''' Load detections data '''
     detections_file = detections_directory / Path("detections-"+ datetime.now().strftime("%Y-%m-%d") + ".jsonl")
     detections_data = webui.generate_table_data_from_file(detections_file)
+
+    ''' Start Video Analyzer (If Enabeled)'''
+    if analyze_video:
+        # override video_streams with processed endpoints
+        video_streams = webui.start_yolo_stream_server(
+            stream_urls=video_streams,
+            port=8001,
+            model_name="yolov5s",  # fast CPU model yolov5n
+            skip_frames=5 # more frames skiped = better performance
+        )
        
     ''' Authentication (WIP)'''
     if authentication:
@@ -80,6 +90,7 @@ def parse_args():
     input_group.add_argument("--directory-watcher",type=Path,required=False,help="Path to directory that the size in GB will be reported to the dashboard")
     input_group.add_argument("--video-streams",type=str,nargs="*",required=False,help="List of live stream urls to display on /video endpoint") # 1 or more stream urls with nargs="*"
     input_group.add_argument("--authentication",action="store_true", help="Enable authentication (omit to keep it False)")
+    input_group.add_argument("--analyze-video",action="store_true", help=" Enable yolo processing on video streams, draws boxes around birds (omit to display raw video)")
     
     # Command line arguments for logging configuration.
     logging_group = parser.add_argument_group('Logging')
@@ -117,7 +128,7 @@ if __name__ in {"__main__", "__mp_main__"}: #to allow server to run within mp
         )
         
         ''' run main '''
-        main(args.detections_directory, args.directory_watcher, args.video_streams, args.authentication)
+        main(args.detections_directory, args.directory_watcher, args.video_streams, args.authentication, args.analyze_video)
     except Exception as e:
         logger.error(f'Unknown exception of type: {type(e)} - {e}')
         raise e

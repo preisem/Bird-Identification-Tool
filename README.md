@@ -58,6 +58,7 @@ python -m pip install -r requirements.txt
 - ```--video-streams```: ```str list``` space-delimited list of urls to live video streams that will be displayed on the /video page (optional)
 - ```--log-file-path```: ```pathlib.Path``` parth to directory to save log files (optional)
 - ```--authentication```: *WIP* turns on authentication with login page
+- ```--analyze-video```: *WIP* turns on yolo processing on video streams, draws boxes around birds
 
 ## JSON Output Data Schema 
 |field-name|data-type|description|example|
@@ -79,8 +80,14 @@ graph LR
     routes[ routes ]
     datacharts[ datacharts ]
     auth[ auth ]
+    videoyolo[ videoyolo ] 
   end
   subgraph tracking
     audio[ audio ]
     video[ video ]
   end
+```
+## Video Stream Processing with YOLO
+Optionaly video processing of incoming video streams can be turned on with ```--analyze-video```. This currently will use yolov5n or yolov5s to draw boxes around objects. The model has not yet been trained on birds, but in the future my plan is to create and train a model on a custom dataset of bird photos. 
+I have also added a the ability to frame skip, so that every nth frame is processed, while leaving previous detections drawn. The benift of this is that it reduces processing power and makes the stream less laggy on lightweight hardware. 
+The code for this lives in ```webui/videoyolo.py```
