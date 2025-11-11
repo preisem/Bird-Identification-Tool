@@ -31,11 +31,11 @@ def main(detections_directory: Path, directory_watcher: Path, video_streams, aut
         video_streams = webui.start_yolo_stream_server(
             stream_urls=video_streams,
             port=8001,
-            model_name="yolov5n",  # fast CPU model yolov5n
-            skip_frames=5 # more frames skiped = better performance
+            model_path="yolov8n.pt",  # or your custom-trained model
+            skip_frames=5
         )
-       
-    ''' Authentication (WIP)'''
+
+    ''' Authentication (WIP) with Login Route'''
     if authentication:
         webui.initAuthentication()
 
