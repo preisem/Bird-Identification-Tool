@@ -1,9 +1,12 @@
 import cv2
 import torch
+import warnings
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 import uvicorn
 from urllib.parse import urlparse
+
+warnings.filterwarnings("ignore", category=FutureWarning) # torchhub warning supression
 
 def start_yolo_stream_server(stream_urls: list[str], port: int = 8001, model_name: str = 'yolov5s', skip_frames: int = 2) -> list[str]:
     """
@@ -47,7 +50,9 @@ def start_yolo_stream_server(stream_urls: list[str], port: int = 8001, model_nam
 
                 if detections is not None:
                     for det in detections:
-                        x1, y1, x2, y2, conf, cls = map(int, det[:6])
+                        x1, y1, x2, y2 = map(int, det[:4])
+                        conf = float(det[4])
+                        cls = int(det[5])
                         label = f"{model.names[cls]} {conf:.2f}"
                         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                         cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
