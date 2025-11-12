@@ -16,7 +16,7 @@ import webui #internal pacakage
 logger = logging.getLogger(__name__)
 
 
-def main(detections_directory: Path, directory_watcher: Path, video_streams, authentication: bool, analyze_video: bool):
+def main(detections_directory: Path, directory_watcher: Path, video_streams, authentication: bool, analyze_video: bool, model_path: Path, skip_frames: int):
     ''' START '''
     date_today_str = datetime.now().strftime("%Y-%m-%d")
     logger.info("Starting Bird Server: " + str(date_today_str))
@@ -27,13 +27,15 @@ def main(detections_directory: Path, directory_watcher: Path, video_streams, aut
 
     ''' Start Video Analyzer (If Enabeled)'''
     if analyze_video:
-        # override video_streams with processed endpoints
+        port = 8001
+        logger.info(f"Starting YOLOv8 stream server on port {port}, with model {model_path}, and skip frames = {skip_frames}")
         video_streams = webui.start_yolo_stream_server(
             stream_urls=video_streams,
-            port=8001,
-            model_path="yolov8n.pt",  # or your custom-trained model
-            skip_frames=5
-        )
+            port=port,
+            model_path=model_path,
+            skip_frames=skip_frames
+        )       
+
 
     ''' Authentication (WIP) with Login Route'''
     if authentication:
@@ -91,7 +93,9 @@ def parse_args():
     input_group.add_argument("--video-streams",type=str,nargs="*",required=False,help="List of live stream urls to display on /video endpoint") # 1 or more stream urls with nargs="*"
     input_group.add_argument("--authentication",action="store_true", help="Enable authentication (omit to keep it False)")
     input_group.add_argument("--analyze-video",action="store_true", help=" Enable yolo processing on video streams, draws boxes around birds (omit to display raw video)")
-    
+    input_group.add_argument("--model-path",type=Path,required=False,default="yolov8n.pt",help="Path to .pt model file that the video analyzer will use, default is yolov8n.pt")
+    input_group.add_argument("--skip-frames",type=int,required=False,default=0,help="number of frames video analyer will skip, default is 0")
+
     # Command line arguments for logging configuration.
     logging_group = parser.add_argument_group('Logging')
     log_choices = ['DEBUG', 'CRITICAL', 'FATAL', 'ERROR', 'WARNING', 'WARN', 'INFO', 'NOTSET']
@@ -128,7 +132,7 @@ if __name__ in {"__main__", "__mp_main__"}: #to allow server to run within mp
         )
         
         ''' run main '''
-        main(args.detections_directory, args.directory_watcher, args.video_streams, args.authentication, args.analyze_video)
+        main(args.detections_directory, args.directory_watcher, args.video_streams, args.authentication, args.analyze_video, args.model_path, args.skip_frames)
     except Exception as e:
         logger.error(f'Unknown exception of type: {type(e)} - {e}')
         raise e

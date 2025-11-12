@@ -1,10 +1,13 @@
 import cv2
 import warnings
+import logging
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 import uvicorn
 from urllib.parse import urlparse
 from ultralytics import YOLO
+
+logger = logging.getLogger(__name__)
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
@@ -21,8 +24,13 @@ def start_yolo_stream_server(stream_urls: list[str], port: int = 8001, model_pat
     Returns:
         List[str]: List of processed stream URLs (e.g., http://localhost:8001/laptop)
     """
+
     app = FastAPI()
     model = YOLO(model_path)
+
+    # TEST
+    #results = model("bird.jpg", verbose=False)
+    #results[0].show()
 
     processed_urls = []
 
@@ -44,12 +52,17 @@ def start_yolo_stream_server(stream_urls: list[str], port: int = 8001, model_pat
                 frame_count += 1
 
                 if frame_count % skip_frames == 0:
-                    results = model(frame, verbose=False)[0]
+                    # Optional: convert to RGB if needed
+                    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    results = model(rgb_frame, verbose=False)[0]
                     last_detections = results.boxes.data.cpu().numpy()
                 detections = last_detections
 
                 for det in detections:
                     x1, y1, x2, y2, conf, cls = det[:6]
+                    logger.debug(f"Detected {model.names[int(cls)]} with confidence {conf:.2f}")
+                    if conf < 0.3:
+                        continue
                     x1, y1, x2, y2 = map(int, [x1, y1, x2, y2])
                     label = f"{model.names[int(cls)]} {conf:.2f}"
                     cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
@@ -73,9 +86,8 @@ def start_yolo_stream_server(stream_urls: list[str], port: int = 8001, model_pat
 
         full_url = f"http://localhost:{port}/{endpoint_name}"
         processed_urls.append(full_url)
-        print(f"Registered endpoint /{endpoint_name} for stream: {stream_url}")
+        logger.info(f"Registered endpoint /{endpoint_name} for stream: {stream_url}")
 
-    print(f"Starting YOLOv8 stream server on port {port}")
     import threading
     threading.Thread(target=lambda: uvicorn.run(app, host="0.0.0.0", port=port), daemon=True).start()
 
