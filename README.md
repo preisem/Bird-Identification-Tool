@@ -7,7 +7,7 @@
 [![Roboflow](https://img.shields.io/badge/Roboflow-6706CE?logo=Roboflow&logoColor=fff)](#)
 
 This tool is split into 2 main parts:
-- Node (main.py): Nodes collect and analyze audio (and eventually video) and save bird detections to daily jsonl files
+- Node (node.py): Nodes collect and analyze audio (and eventually video) and save bird detections to daily jsonl files
 - Server (server.py): Webserver reads jsonl bird detection files created by nodes, displays data
 ## Install
 ```
