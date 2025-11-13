@@ -65,7 +65,8 @@ def start_yolo_stream_server(stream_urls: list[str], port: int = 8001, model_pat
                         continue
                     x1, y1, x2, y2 = map(int, [x1, y1, x2, y2])
                     label = f"{model.names[int(cls)]} {conf:.2f}"
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    color = confidence_to_color(conf) # color gradient box color based on confidence level
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
                     cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
                 ret, buffer = cv2.imencode('.jpg', frame)
@@ -92,3 +93,30 @@ def start_yolo_stream_server(stream_urls: list[str], port: int = 8001, model_pat
     threading.Thread(target=lambda: uvicorn.run(app, host="0.0.0.0", port=port), daemon=True).start()
 
     return processed_urls
+
+''' Helper Functions '''
+def confidence_to_color(conf):
+    """
+    Maps confidence (0.0 to 1.0) to a BGR color from red to green.
+    Red (low) → Orange → Yellow → Green (high)
+    """
+    conf = max(0.0, min(conf, 1.0))  # Clamp between 0 and 1
+
+    # Interpolate across red → orange → yellow → green
+    if conf < 0.33:
+        # Red to Orange
+        r = 255
+        g = int(255 * (conf / 0.33))
+        b = 0
+    elif conf < 0.66:
+        # Orange to Yellow
+        r = 255
+        g = 255
+        b = 0
+    else:
+        # Yellow to Green
+        r = int(255 * (1 - (conf - 0.66) / 0.34))
+        g = 255
+        b = 0
+
+    return (b, g, r)  # OpenCV uses BGR
