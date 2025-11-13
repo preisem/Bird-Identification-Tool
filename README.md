@@ -132,4 +132,6 @@ I have also added a the ability to frame skip with ```--skip-frames```, so that 
 The code for this lives in ```webui/videoyolo.py```
 
 ## Training a Custom Bird Model
-I have currated images of the top 100 birds in New York. I am using ```https://universe.roboflow.com/``` to label all the images with boxes. Then that data is used to make a ```data.yaml```, which is used to train a new model. This model currently does not work, as it needs more validation and test data.
+I am using ```https://universe.roboflow.com/``` to label all the images with boxes. Then that data is used to make a ```data.yaml```, which creates a training dataset. I have currated images of the top birds in New York. The model is trained on [THIS](https://universe.roboflow.com/birds-ejmtr/ny-10-birds-1zyst/dataset/2) dataset. The model is trained using the command in ```Models/train-model.sh```.
+### Current Models Included
+- **```bird.pt```** - Able to identify ```Northen Cardnial``` ```Downy Woodpecker``` ```American Robin``` 
