@@ -28,6 +28,42 @@ python -m pip install -r requirements.txt
   ```
   python server.py --detections-directory path/to/folder --log-file-path path/to/folder
   ```
+## System Architechure Design
+```mermaid
+flowchart LR
+  subgraph Node
+    AudioAnalyzer["Audio Analysis: Species Classificaation"]
+    AudioStorage["Audio Recordings (folder)"]
+    AnalyzedAudioJSONStorage["Analyzed Detections JSON data (folder)"]
+    AudioNode[Audio Interface]
+    VideoNode[Video Interface]
+  end
+
+  subgraph WebServer Back-End
+    AnalyzerProc[Analyzer Process<br/>Video Stream Image detection; Classifier]
+    DataVisualizationProcessor[Data Visualization Processor]
+
+  end
+
+  subgraph WebServer Front-End
+    DirectoryMonitor[Storage Utilization Monitor]
+    Player[Video Stream Viewer /video]
+    Dashboard[Detections Data Visualizations /analysis]
+  end
+
+  VideoNode -->|Raw Video Stream| AnalyzerProc
+  AnalyzerProc -->|Analyzed Video | Player
+
+  AudioNode -->|record/upload -> save .wav| AudioStorage
+  AudioStorage -->|.wav audio input| AudioAnalyzer
+  AudioAnalyzer -->|write dectections to JSON output| AnalyzedAudioJSONStorage
+  AnalyzedAudioJSONStorage -->|JSON data input| DataVisualizationProcessor
+  DataVisualizationProcessor -->|compute visualizations| Dashboard
+  AnalyzedAudioJSONStorage -->|check storage utilization| DirectoryMonitor
+  AudioStorage -->|check storage utilization| DirectoryMonitor
+  
+
+```
 ## Import Notes
 - check the audio device names using ```arecord -L```
 - check the video device names using ```v4l2-ctl --list-devices```
